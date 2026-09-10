@@ -33,14 +33,14 @@ class VoiceEngine:
             self.engine = pyttsx3.init()
             self.engine.setProperty("rate", VOICE_RATE)
             self.engine.setProperty("volume", VOICE_VOLUME)
-            # Pick male/deep voice if available on system (e.g. David / Mark)
             voices = self.engine.getProperty("voices")
             for v in voices:
                 if "david" in v.name.lower() or "mark" in v.name.lower() or "male" in v.name.lower():
                     self.engine.setProperty("voice", v.id)
                     break
         except Exception as e:
-            print(f"[VoiceEngine] TTS init notice: {e}")
+            # Headless Linux / cloud environment without sound drivers
+            self.engine = None
 
     def _start_speech_worker(self):
         def worker():
@@ -52,19 +52,14 @@ class VoiceEngine:
                 if self.on_speech_start:
                     self.on_speech_start(text)
                 try:
-                    # In Windows, re-init engine in thread if needed
-                    eng = pyttsx3.init()
-                    eng.setProperty("rate", VOICE_RATE)
-                    eng.setProperty("volume", VOICE_VOLUME)
-                    voices = eng.getProperty("voices")
-                    for v in voices:
-                        if "david" in v.name.lower() or "male" in v.name.lower():
-                            eng.setProperty("voice", v.id)
-                            break
-                    eng.say(text)
-                    eng.runAndWait()
-                except Exception as err:
-                    print(f"[VoiceEngine TTS Error]: {err}")
+                    if self.engine:
+                        eng = pyttsx3.init()
+                        eng.setProperty("rate", VOICE_RATE)
+                        eng.setProperty("volume", VOICE_VOLUME)
+                        eng.say(text)
+                        eng.runAndWait()
+                except Exception:
+                    pass
                 finally:
                     self.is_speaking = False
                     if self.on_speech_end:

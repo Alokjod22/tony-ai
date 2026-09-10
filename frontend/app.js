@@ -8,48 +8,88 @@ let recognition = null;
 // Initialize Clock
 function updateClock() {
     const now = new Date();
-    document.getElementById("clock").innerText = now.toTimeString().split(" ")[0];
+    const clockEl = document.getElementById("clock");
+    if (clockEl) clockEl.innerText = now.toTimeString().split(" ")[0];
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// --- Sci-Fi Audio Synthesizer (Web Audio API) ---
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// --- In-Browser Speech Synthesis (Tony's Voice) ---
+function speakInBrowser(text) {
+    if (!('speechSynthesis' in window)) return;
+    try {
+        window.speechSynthesis.cancel(); // Stop any pending speech
+        const cleanText = text.replace(/[*#`_]/g, "").trim();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 1.05;
+        utterance.pitch = 0.95;
 
-function playSciFiSound(type) {
+        // Try selecting a natural English voice
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("David") || v.name.includes("Male")) && v.lang.startsWith("en"));
+        if (preferredVoice) utterance.voice = preferredVoice;
+
+        utterance.onstart = () => setStatus("SPEAKING");
+        utterance.onend = () => setStatus("STANDBY");
+        utterance.onerror = () => setStatus("STANDBY");
+
+        window.speechSynthesis.speak(utterance);
+    } catch (e) {
+        console.warn("[TTS Error]:", e);
+    }
+}
+// Pre-load voices
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+// --- Sci-Fi Audio Synthesizer (Web Audio API) ---
+let audioCtx = null;
+
+function getAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    return audioCtx;
+}
 
-    const now = audioCtx.currentTime;
-    if (type === 'activate') {
-        osc.frequency.setValueAtTime(440, now);
-        osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-        osc.start(now);
-        osc.stop(now + 0.2);
-    } else if (type === 'transmit') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(600, now);
-        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        osc.start(now);
-        osc.stop(now + 0.15);
-    } else if (type === 'tool') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.setValueAtTime(1200, now + 0.05);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
-    }
+function playSciFiSound(type) {
+    try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+        if (type === 'activate') {
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'transmit') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        } else if (type === 'tool') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.setValueAtTime(1200, now + 0.05);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        }
+    } catch (e) {}
 }
 
 // --- Arc Reactor Canvas Visualizer ---
@@ -179,38 +219,54 @@ drawArcReactor();
 // --- State Manager ---
 function setStatus(state) {
     currentState = state;
-    document.getElementById("coreStatus").innerText = state;
+    const statusEl = document.getElementById("coreStatus");
+    if (statusEl) statusEl.innerText = state;
 }
 
 // --- WebSocket Connection ---
 function initWebSocket() {
     const host = window.location.host || "127.0.0.1:8000";
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    ws = new WebSocket(`${protocol}//${host}/ws/stream`);
+    try {
+        ws = new WebSocket(`${protocol}//${host}/ws/stream`);
 
-    ws.onopen = () => {
-        console.log("[WS] Connected to Tony Core.");
-        setStatus("ONLINE");
-        playSciFiSound("activate");
-    };
+        ws.onopen = () => {
+            console.log("[WS] Connected to Tony Core.");
+            setStatus("ONLINE");
+        };
 
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        handleServerMessage(data);
-    };
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                handleServerMessage(data);
+            } catch (err) {
+                console.warn("[WS Parse Error]:", err);
+            }
+        };
 
-    ws.onclose = () => {
-        console.warn("[WS] Connection lost. Reconnecting in 3s...");
-        setStatus("OFFLINE");
-        setTimeout(initWebSocket, 3000);
-    };
+        ws.onclose = () => {
+            console.warn("[WS] Disconnected. Reconnecting in 3s...");
+            setTimeout(initWebSocket, 3000);
+        };
+    } catch (e) {
+        console.warn("[WS Init Error]:", e);
+    }
 }
 initWebSocket();
+
+// Periodic fallback telemetry poll
+setInterval(() => {
+    fetch("/api/telemetry")
+        .then(res => res.json())
+        .then(data => updateTelemetry(data))
+        .catch(() => {});
+}, 3500);
 
 function handleServerMessage(data) {
     if (data.type === "telemetry") {
         updateTelemetry(data.payload);
     } else if (data.type === "response") {
+        removeTypingIndicator();
         setStatus("SPEAKING");
         addMessage("tony", data.payload.text);
         if (data.payload.tool_calls && data.payload.tool_calls.length > 0) {
@@ -219,7 +275,7 @@ function handleServerMessage(data) {
                 addMessage("tool", `[EXEC] ${tc.tool || tc.name}: ${JSON.stringify(tc.result || tc.args)}`);
             });
         }
-        setTimeout(() => setStatus("STANDBY"), 3000);
+        speakInBrowser(data.payload.text);
     } else if (data.type === "state_change") {
         setStatus(data.state);
     }
@@ -228,16 +284,23 @@ function handleServerMessage(data) {
 // Update Telemetry Panel
 function updateTelemetry(diag) {
     if (!diag) return;
-    document.getElementById("cpu-val").innerText = `${diag.cpu_usage_percent}%`;
-    document.getElementById("cpu-fill").style.width = `${diag.cpu_usage_percent}%`;
+    const cpuVal = document.getElementById("cpu-val");
+    const cpuFill = document.getElementById("cpu-fill");
+    if (cpuVal) cpuVal.innerText = `${diag.cpu_usage_percent}%`;
+    if (cpuFill) cpuFill.style.width = `${diag.cpu_usage_percent}%`;
 
-    document.getElementById("ram-val").innerText = `${diag.ram_percent}% (${diag.ram_used_gb} GB)`;
-    document.getElementById("ram-fill").style.width = `${diag.ram_percent}%`;
+    const ramVal = document.getElementById("ram-val");
+    const ramFill = document.getElementById("ram-fill");
+    if (ramVal) ramVal.innerText = `${diag.ram_percent}% (${diag.ram_used_gb} GB)`;
+    if (ramFill) ramFill.style.width = `${diag.ram_percent}%`;
 
-    document.getElementById("battery-val").innerText = typeof diag.battery_percent === 'number' ? `${diag.battery_percent}%` : diag.battery_percent;
-    document.getElementById("battery-fill").style.width = typeof diag.battery_percent === 'number' ? `${diag.battery_percent}%` : '100%';
+    const batVal = document.getElementById("battery-val");
+    const batFill = document.getElementById("battery-fill");
+    if (batVal) batVal.innerText = typeof diag.battery_percent === 'number' ? `${diag.battery_percent}%` : diag.battery_percent;
+    if (batFill) batFill.style.width = typeof diag.battery_percent === 'number' ? `${diag.battery_percent}%` : '100%';
 
-    document.getElementById("os-val").innerText = diag.os.toUpperCase();
+    const osVal = document.getElementById("os-val");
+    if (osVal && diag.os) osVal.innerText = diag.os.toUpperCase();
 }
 
 // Chat Messages Feed
@@ -259,6 +322,22 @@ function addMessage(role, text) {
     feed.scrollTop = feed.scrollHeight;
 }
 
+function showTypingIndicator() {
+    removeTypingIndicator();
+    const feed = document.getElementById("chatFeed");
+    const div = document.createElement("div");
+    div.id = "typingIndicator";
+    div.className = "message tony";
+    div.innerHTML = `<span class="sender">TONY:</span><p style="color:#00f0ff;font-style:italic;">Processing tactical cognitive analysis...</p>`;
+    feed.appendChild(div);
+    feed.scrollTop = feed.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const ind = document.getElementById("typingIndicator");
+    if (ind) ind.remove();
+}
+
 // Command Submission
 function handleCommandSubmit(e) {
     e.preventDefault();
@@ -270,24 +349,31 @@ function handleCommandSubmit(e) {
     sendPrompt(text);
 }
 
-function sendPrompt(text) {
+async function sendPrompt(text) {
     addMessage("user", text);
     playSciFiSound("transmit");
     setStatus("THINKING");
+    showTypingIndicator();
 
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "prompt", text: text }));
-    } else {
-        // Fallback HTTP POST
-        fetch("/api/chat", {
+    try {
+        // Use direct HTTP fetch for 100% reliable responses
+        const res = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ prompt: text })
-        })
-        .then(res => res.json())
-        .then(data => {
-            handleServerMessage({ type: "response", payload: data });
         });
+        
+        if (!res.ok) {
+            throw new Error(`Server returned ${res.status}`);
+        }
+        
+        const data = await res.json();
+        handleServerMessage({ type: "response", payload: data });
+    } catch (err) {
+        removeTypingIndicator();
+        console.error("Chat Error:", err);
+        addMessage("tony", `Communication error: ${err.message}. Retrying link...`);
+        setStatus("STANDBY");
     }
 }
 
@@ -319,45 +405,52 @@ function toggleVoiceInput() {
 function startVoiceInput() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
-        alert("Browser Speech Recognition not supported. Use the backend microphone or text console.");
+        alert("Browser Speech Recognition not supported in this browser. Please type in the transmit box.");
         return;
     }
 
-    recognition = new SpeechRec();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = "en-US";
+    try {
+        recognition = new SpeechRec();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "en-US";
 
-    recognition.onstart = () => {
-        isRecording = true;
-        setStatus("LISTENING");
-        document.getElementById("micBtn").classList.add("active");
-        document.getElementById("micLabel").innerText = "LISTENING... SPEAK NOW";
-        playSciFiSound("activate");
-    };
+        recognition.onstart = () => {
+            isRecording = true;
+            setStatus("LISTENING");
+            document.getElementById("micBtn").classList.add("active");
+            document.getElementById("micLabel").innerText = "LISTENING... SPEAK NOW";
+            playSciFiSound("activate");
+        };
 
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            stopVoiceInput();
+            sendPrompt(transcript);
+        };
+
+        recognition.onerror = (event) => {
+            console.warn("Speech recognition error:", event.error);
+            stopVoiceInput();
+        };
+
+        recognition.onend = () => {
+            stopVoiceInput();
+        };
+
+        recognition.start();
+    } catch (e) {
+        console.warn("Speech start error:", e);
         stopVoiceInput();
-        sendPrompt(transcript);
-    };
-
-    recognition.onerror = (event) => {
-        console.error("Speech Error:", event.error);
-        stopVoiceInput();
-    };
-
-    recognition.onend = () => {
-        stopVoiceInput();
-    };
-
-    recognition.start();
+    }
 }
 
 function stopVoiceInput() {
     isRecording = false;
-    document.getElementById("micBtn").classList.remove("active");
-    document.getElementById("micLabel").innerText = "PUSH TO ENGAGE VOICE";
+    const btn = document.getElementById("micBtn");
+    const lbl = document.getElementById("micLabel");
+    if (btn) btn.classList.remove("active");
+    if (lbl) lbl.innerText = "PUSH TO ENGAGE VOICE";
     if (currentState === "LISTENING") {
         setStatus("STANDBY");
     }
