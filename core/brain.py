@@ -28,10 +28,11 @@ class TonyBrain:
         self._init_genai()
 
     def _init_genai(self):
-        if GEMINI_API_KEY:
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or GEMINI_API_KEY
+        if api_key:
             try:
                 from google import genai
-                self.client = genai.Client(api_key=GEMINI_API_KEY)
+                self.client = genai.Client(api_key=api_key)
             except Exception as e:
                 print(f"[TonyBrain] Note on Gemini Client init: {e}")
 
@@ -40,19 +41,23 @@ class TonyBrain:
         # 1. Store in memory
         self.memory.add_message("user", user_text)
 
-        # 2. Check if screen vision is requested
+        # 2. Re-init if client wasn't initialized yet
+        if not self.client:
+            self._init_genai()
+
+        # 3. Check if screen vision is requested
         lower = user_text.lower()
         if any(phrase in lower for phrase in ["what's on my screen", "look at my screen", "read my screen", "see this", "analyze screen", "take screenshot"]):
             return await self.analyze_screen(user_text)
 
-        # 3. If Gemini client is active, use LLM with tool calling
-        if self.client and GEMINI_API_KEY:
+        # 4. If Gemini client is active, use LLM with tool calling
+        if self.client:
             try:
                 return await self._process_with_llm(user_text)
             except Exception as e:
                 print(f"[TonyBrain LLM Error, falling back to local heuristic]: {e}")
 
-        # 4. Local heuristic & tool execution fallback
+        # 5. Local heuristic & tool execution fallback
         return self._process_with_fallback_arsenal(user_text)
 
     async def _process_with_llm(self, user_text: str) -> Dict[str, Any]:
@@ -77,18 +82,35 @@ class TonyBrain:
         memory_context = f"\nPersistent Knowledge Memory: {json.dumps(kv_memories)}" if kv_memories else ""
 
         system_instruction = f"{TONY_SYSTEM_PROMPT}{memory_context}"
+        active_model = os.getenv("TONY_MODEL") or MODEL_NAME or "gemini-3.6-flash"
 
         import asyncio
-        response = await asyncio.to_thread(
-            self.client.models.generate_content,
-            model=MODEL_NAME,
-            contents=user_text,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.7,
-                tools=gemini_tools if gemini_tools else None
+        try:
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model=active_model,
+                contents=user_text,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    temperature=0.7,
+                    tools=gemini_tools if gemini_tools else None
+                )
             )
-        )
+        except Exception as err:
+            # Automatic fallback to gemini-3.6-flash if model quota/alias failed
+            if active_model != "gemini-3.6-flash":
+                response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model="gemini-3.6-flash",
+                    contents=user_text,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.7,
+                        tools=gemini_tools if gemini_tools else None
+                    )
+                )
+            else:
+                raise err
 
         tool_executed = []
         # Check if function calls were made
