@@ -47,6 +47,12 @@ app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 class ChatRequest(BaseModel):
     prompt: str
     persona: str = "tony"
+    reasoning_mode: Optional[str] = "balanced"
+
+class ActionApprovalRequest(BaseModel):
+    approval_id: str
+    approved: bool
+    command: Optional[str] = None
 
 class AddMemoryRequest(BaseModel):
     content: str
@@ -91,13 +97,24 @@ async def get_telemetry():
 async def handle_chat(req: ChatRequest):
     try:
         persona = (req.persona or "tony").lower()
-        result = await brain.process_user_input(req.prompt, persona=persona)
+        reasoning = req.reasoning_mode or "balanced"
+        result = await brain.process_user_input(req.prompt, persona=persona, reasoning_mode=reasoning)
         return result
     except Exception as e:
         import traceback
         traceback.print_exc()
         fallback_res = brain._process_with_fallback_arsenal(req.prompt, persona=req.persona or "tony")
         return fallback_res
+
+@app.post("/api/action/approve")
+async def handle_action_approval(req: ActionApprovalRequest):
+    if req.approved:
+        # Execute approved command
+        if req.command:
+            res = tools.run_terminal_command(req.command)
+            return {"status": "executed", "result": res}
+        return {"status": "authorized", "message": "Action execution confirmed by operator."}
+    return {"status": "rejected", "message": "Action cancelled by operator."}
 
 # --- 1. Memory Core Endpoints ---
 @app.get("/api/memory")

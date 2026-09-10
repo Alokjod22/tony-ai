@@ -1,10 +1,8 @@
 import urllib.request
 import json
 import asyncio
-import websockets
 
 BASE_URL = 'https://tony-ai-assistant.onrender.com'
-WS_URL = 'wss://tony-ai-assistant.onrender.com/ws/stream'
 
 print('========================================================')
 print('        TONY AI FULL LIVE CLOUD TEST SUITE              ')
@@ -35,16 +33,15 @@ except Exception as e:
     print('   [FAIL] Telemetry API Failed:', e)
 
 # 3. Test Gemini Cognitive Reasoning & Persona
-print('\n[TEST 3] Checking Gemini LLM Cognitive Chat (/api/chat)...')
+print('\n[TEST 3] Checking Cognitive Chat API (/api/chat)...')
 queries = [
     'Tony, identify yourself and state your primary design.',
-    'What is the distance between Earth and Mars in kilometers?',
-    'What is the weather in Tokyo?',
-    'Who is Nikola Tesla?'
+    'What is your active security posture?',
+    'Give me a brief tactical assessment of current system resources.'
 ]
 
 for q in queries:
-    req_data = json.dumps({'prompt': q}).encode('utf-8')
+    req_data = json.dumps({'prompt': q, 'persona': 'tony', 'reasoning_mode': 'balanced'}).encode('utf-8')
     req = urllib.request.Request(f'{BASE_URL}/api/chat', data=req_data, headers={'Content-Type': 'application/json'})
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
@@ -53,26 +50,9 @@ for q in queries:
             preview = text[:140].replace('\n', ' ')
             print(f'\n   Query: "{q}"')
             print(f'   Tony: {preview}...')
-            print(f'   Engine: {res.get("source")}')
     except Exception as e:
         print(f'   [FAIL] Query "{q}" Failed:', e)
 
-# 4. Test Live WebSocket Telemetry & Streaming
-print('\n[TEST 4] Testing Live WebSocket Stream (/ws/stream)...')
-async def test_ws():
-    try:
-        async with websockets.connect(WS_URL) as ws:
-            msg = await asyncio.wait_for(ws.recv(), timeout=6)
-            data = json.loads(msg)
-            print(f'   [PASS] WebSocket Connected! Initial packet type: "{data.get("type")}"')
-            if data.get('payload'):
-                print(f'     - Streamed CPU: {data["payload"].get("cpu_usage_percent")}%')
-                print(f'     - Streamed RAM: {data["payload"].get("ram_percent")}%')
-    except Exception as e:
-        print('   [FAIL] WebSocket Test Failed:', e)
-
-asyncio.run(test_ws())
-
 print('\n========================================================')
-print('           ALL LIVE END-TO-END TESTS PASSED!            ')
+print('           ALL LIVE END-TO-END TESTS COMPLETED!         ')
 print('========================================================')

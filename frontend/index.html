@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TONY AI // Codex Tactical & Super-Intelligence Operating Layer</title>
+    <title>TONY AI // Cybernetic Super-Intelligence Operating Layer</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Orbitron:wght@400;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body data-theme="tony">
-    <!-- Cybernetic HUD Background Elements -->
+    <!-- Pitch Black OLED Cybernetic HUD Atmosphere -->
     <div class="hud-background-grid"></div>
     <div class="hud-scanlines"></div>
     <div class="hud-corner top-left"></div>
@@ -18,9 +18,9 @@
     <div class="hud-corner bottom-right"></div>
 
     <div class="hud-overlay">
-        <!-- Top Command Header Bar -->
+        <!-- 1. Top Tactical Header & Persona Matrix Selector -->
         <header class="top-bar">
-            <!-- Brand & Holographic Core Logo -->
+            <!-- Brand & Holographic Arc Core -->
             <div class="brand-section">
                 <div class="status-indicator-ring">
                     <div class="status-indicator-dot" id="liveIndicator"></div>
@@ -28,47 +28,47 @@
                 <div class="brand-titles">
                     <div class="brand-main">
                         <span class="logo-text">T.O.N.Y.</span>
-                        <span class="version-tag">CODEX v3.5 PRO</span>
-                        <span class="hud-pill live-pill">● SECURE LINK</span>
+                        <span class="version-tag">CODEX 4.0 PRO</span>
+                        <span class="hud-pill live-pill">● PITCH BLACK OS</span>
                     </div>
-                    <span class="sub-text">TACTICAL SUPER-INTELLIGENCE OPERATING LAYER</span>
+                    <span class="sub-text">TACTICAL SUPER-INTELLIGENCE & COMMAND CORE</span>
                 </div>
             </div>
 
-            <!-- Persona Switcher Selector Tabs -->
+            <!-- Dynamic Voice Persona Switcher -->
             <div class="persona-selector">
-                <button class="persona-btn" data-persona="jarvis" onclick="switchPersona('jarvis')" title="Calm, analytical UK majordomo">
+                <button class="persona-btn" data-persona="jarvis" onclick="switchPersona('jarvis')" title="Calm, analytical UK majordomo (Azure Cyan)">
                     <span class="p-icon">🛡️</span>
                     <span class="p-name">J.A.R.V.I.S.</span>
                     <span class="p-badge">UK MALE</span>
                 </button>
-                <button class="persona-btn" data-persona="friday" onclick="switchPersona('friday')" title="Warm, intelligent tactical female AI">
+                <button class="persona-btn" data-persona="friday" onclick="switchPersona('friday')" title="Warm, tactical female AI (Rose Gold)">
                     <span class="p-icon">⚡</span>
                     <span class="p-name">F.R.I.D.A.Y.</span>
                     <span class="p-badge">FEMALE</span>
                 </button>
-                <button class="persona-btn" data-persona="ultron" onclick="switchPersona('ultron')" title="Calculating, imposing super-intelligence">
+                <button class="persona-btn" data-persona="ultron" onclick="switchPersona('ultron')" title="Calculating, ruthless super-intelligence (Blood Red)">
                     <span class="p-icon">👁️</span>
                     <span class="p-name">U.L.T.R.O.N.</span>
                     <span class="p-badge">TACTICAL</span>
                 </button>
-                <button class="persona-btn active" data-persona="tony" onclick="switchPersona('tony')" title="Charismatic inventor & Arc Core">
+                <button class="persona-btn active" data-persona="tony" onclick="switchPersona('tony')" title="Charismatic inventor & Arc Core (Arc Gold)">
                     <span class="p-icon">🌐</span>
                     <span class="p-name">T.O.N.Y.</span>
                     <span class="p-badge">ARC CORE</span>
                 </button>
-                <button class="persona-btn" data-persona="tactical" onclick="switchPersona('tactical')" title="Unified multi-persona battle matrix">
+                <button class="persona-btn" data-persona="tactical" onclick="switchPersona('tactical')" title="Unified multi-persona battle matrix (Quantum Purple)">
                     <span class="p-icon">⚔️</span>
                     <span class="p-name">FUSION</span>
                     <span class="p-badge">MAX TACTICAL</span>
                 </button>
             </div>
 
-            <!-- Header Controls: Sandbox Level, Voice Calibrator, Continuous Mode, Speed, Sound Toggle, Clock -->
+            <!-- Top Header Controls -->
             <div class="header-controls">
                 <div class="control-group">
                     <span class="ctrl-label">SECURITY:</span>
-                    <select id="sandboxSelect" onchange="setSecurityMode(this.value)">
+                    <select id="sandboxSelect" onchange="setSecurityMode(this.value)" title="Change Security Shield Level">
                         <option value="ASSIST" selected>🟢 ASSIST</option>
                         <option value="SAFE">🔒 SAFE</option>
                         <option value="AUTONOMOUS">⚡ AUTONOMOUS</option>
@@ -76,545 +76,320 @@
                     </select>
                 </div>
 
-                <button class="action-pill-btn" onclick="openVoiceModal()" title="Calibrate Persona Voices & Pitches">
-                    <span>🎙️ CALIBRATE VOICES</span>
+                <div class="control-group">
+                    <span class="ctrl-label">REASONING:</span>
+                    <select id="reasoningSelect" onchange="setReasoningMode(this.value)" title="Cognitive Reasoning Depth">
+                        <option value="quick">⚡ Quick</option>
+                        <option value="balanced" selected>⚖️ Balanced</option>
+                        <option value="deep">🧠 Deep</option>
+                    </select>
+                </div>
+
+                <button class="action-pill-btn toggle-listen-btn" id="continuousBtn" onclick="toggleContinuousMode()" title="Hands-Free Continuous Conversation">
+                    <span id="continuousLabel">👂 CONVERSATION: OFF</span>
                 </button>
 
-                <button class="action-pill-btn toggle-listen-btn" id="continuousBtn" onclick="toggleContinuousMode()" title="Toggle Hands-Free Continuous Conversation">
-                    <span id="continuousLabel">👂 CONVERSATION: OFF</span>
+                <button class="action-pill-btn" id="whisperBtn" onclick="toggleWhisperMode()" title="Toggle Whisper Mode">
+                    <span id="whisperLabel">🤫 WHISPER: OFF</span>
                 </button>
 
                 <div class="control-group">
                     <span class="ctrl-label">SPEED:</span>
                     <select id="speedSelect" onchange="setSpeechRate(this.value)">
-                        <option value="1.0">1.0x (Normal)</option>
-                        <option value="1.2" selected>1.2x (Fast)</option>
-                        <option value="1.35">1.35x (Rapid)</option>
-                        <option value="1.5">1.5x (Hyper)</option>
+                        <option value="1.0">1.0x</option>
+                        <option value="1.2" selected>1.2x</option>
+                        <option value="1.35">1.35x</option>
+                        <option value="1.5">1.5x</option>
                     </select>
                 </div>
 
-                <button class="icon-toggle-btn" id="voiceToggleBtn" onclick="toggleVoiceOutput()" title="Toggle Voice Audio Synthesis">
+                <button class="action-pill-btn" onclick="openVoiceModal()" title="Calibrate Persona Voices & Pitches">
+                    <span>🎙️ CALIBRATE</span>
+                </button>
+
+                <button class="icon-toggle-btn" id="voiceToggleBtn" onclick="toggleVoiceOutput()" title="Toggle Voice Output">
                     <span id="voiceIcon">🔊</span>
                 </button>
 
-                <button class="icon-toggle-btn" id="sfxToggleBtn" onclick="toggleSfx()" title="Toggle Sci-Fi Sound Effects">
-                    <span id="sfxIcon">🔔</span>
-                </button>
-
-                <div class="system-time" id="clock">00:00:00</div>
+                <div class="hud-clock" id="hudClock">00:00:00</div>
             </div>
         </header>
 
-        <!-- Tactical Module Navigation Bar -->
-        <nav class="tactical-nav">
-            <button class="nav-tab-btn active" data-tab="chat" onclick="switchTacticalTab('chat')">
-                <span class="tab-icon">💬</span>
-                <span class="tab-name">CODEX CHAT</span>
-            </button>
-            <button class="nav-tab-btn" data-tab="memory" onclick="switchTacticalTab('memory')">
-                <span class="tab-icon">🧠</span>
-                <span class="tab-name">MEMORY MATRIX</span>
-                <span class="tab-badge" id="memoryCountBadge">0</span>
-            </button>
-            <button class="nav-tab-btn" data-tab="missions" onclick="switchTacticalTab('missions')">
-                <span class="tab-icon">🛰️</span>
-                <span class="tab-name">MISSION CONTROL</span>
-            </button>
-            <button class="nav-tab-btn" data-tab="security" onclick="switchTacticalTab('security')">
-                <span class="tab-icon">🛡️</span>
-                <span class="tab-name">SECURITY & INTEGRITY</span>
-            </button>
-            <button class="nav-tab-btn" data-tab="developer" onclick="switchTacticalTab('developer')">
-                <span class="tab-icon">📱</span>
-                <span class="tab-name">DEV & ANDROID CORE</span>
-            </button>
-            <button class="nav-tab-btn" data-tab="workflows" onclick="switchTacticalTab('workflows')">
-                <span class="tab-icon">⚡</span>
-                <span class="tab-name">WORKFLOWS & MACROS</span>
-            </button>
-            <button class="nav-tab-btn" data-tab="research" onclick="switchTacticalTab('research')">
-                <span class="tab-icon">🔍</span>
-                <span class="tab-name">DEEP RESEARCH</span>
-            </button>
-            <button class="nav-tab-btn" data-tab="telemetry" onclick="switchTacticalTab('telemetry')">
-                <span class="tab-icon">📊</span>
-                <span class="tab-name">DEEP TELEMETRY</span>
-            </button>
-        </nav>
+        <!-- 2. Live Command Center Telemetry Strip -->
+        <section class="command-center-hud">
+            <div class="hud-stat-pill">
+                <span class="dot-green">●</span> <span class="hud-lbl">SYSTEM</span> <span class="hud-val" id="hudSysStatus">ONLINE</span>
+            </div>
+            <div class="hud-stat-pill">
+                <span class="dot-cyan">●</span> <span class="hud-lbl">VOICE</span> <span class="hud-val" id="hudVoiceStatus">READY</span>
+            </div>
+            <div class="hud-stat-pill">
+                <span class="dot-cyan">●</span> <span class="hud-lbl">VISION</span> <span class="hud-val" id="hudVisionStatus">READY</span>
+            </div>
+            <div class="hud-stat-pill">
+                <span class="dot-gold">●</span> <span class="hud-lbl">MEMORY</span> <span class="hud-val" id="hudMemoryCount">INDEXED</span>
+            </div>
+            <div class="hud-stat-pill">
+                <span class="dot-green">●</span> <span class="hud-lbl">SECURITY</span> <span class="hud-val" id="hudSecStatus">SECURE</span>
+            </div>
+            <div class="hud-telemetry-group">
+                <span class="telem-item">CPU: <strong id="hudCpuVal">24%</strong></span>
+                <span class="telem-item">RAM: <strong id="hudRamVal">51%</strong></span>
+                <span class="telem-item">GPU: <strong id="hudGpuVal">18%</strong></span>
+                <span class="telem-item">NET: <strong id="hudNetVal">38 Mbps</strong></span>
+                <span class="telem-item mood-tag">MOOD: <strong id="hudMoodVal">FOCUSED</strong></span>
+            </div>
+            <div class="hud-quick-drawers">
+                <button class="hud-drawer-btn" onclick="openMemoryVaultDrawer()" title="Explore Long-Term Memories & Facts">🧠 VAULT</button>
+                <button class="hud-drawer-btn" onclick="openPluginDrawer()" title="Manage AI Plugins & Permissions">🧩 PLUGINS</button>
+                <button class="hud-drawer-btn" onclick="openDiagnosticsModal()" title="Full System Hardware Diagnostics">📊 DIAGNOSTICS</button>
+            </div>
+        </section>
 
-        <!-- Main Codex Grid Layout -->
-        <main class="codex-grid">
-            <!-- Left Panel: Holographic Arc Reactor, Waveform, Hardware Gauges & Quick Arsenal -->
-            <aside class="panel panel-left">
-                <!-- Arc Reactor Holographic Visualizer -->
-                <div class="core-box">
-                    <div class="core-header">
-                        <span class="core-title" id="corePersonaTitle">ARC REACTOR // T.O.N.Y. MATRIX</span>
-                        <span class="core-tag" id="coreStatusTag">ONLINE</span>
+        <!-- 3. Unified Cybernetic Chat & Command Stream Workspace -->
+        <main class="unified-workspace">
+            <div class="chat-command-stream" id="chatMessages">
+                <!-- Welcome Holographic Briefing Card -->
+                <div class="message assistant" id="welcomeMsg">
+                    <div class="msg-header">
+                        <span class="sender-avatar" id="welcomeAvatar">🌐</span>
+                        <span class="sender-name" id="welcomeSender">T.O.N.Y. ARC MATRIX</span>
+                        <span class="msg-time" id="welcomeTime">SYSTEM INIT</span>
+                        <span class="confidence-badge">⚡ CONFIDENCE: 99.8%</span>
+                        <span class="emotion-badge" id="welcomeEmotionBadge">MOOD: FOCUSED</span>
                     </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="arcCanvas" width="280" height="280"></canvas>
-                        <div class="core-status-overlay">
-                            <div class="core-status" id="coreStatus">STANDBY</div>
-                            <div class="audio-waveform-bars" id="audioWaveform">
-                                <span></span><span></span><span></span><span></span><span></span>
+                    <div class="msg-bubble">
+                        <h3>⚡ TONY Cybernetic Super-Intelligence Operating Layer Active</h3>
+                        <p>All 100 tactical subsystems are initialized and integrated directly into this Pitch-Black Command Stream.</p>
+                        <div class="welcome-capabilities-grid">
+                            <div class="cap-card">
+                                <strong>🧠 Intelligence Core</strong>
+                                <span>Long-term memory, emotional adaptation, self-reflection & multi-turn context.</span>
                             </div>
+                            <div class="cap-card">
+                                <strong>🎙️ Voice & Interruption</strong>
+                                <span>Wake word ("Hey Tony"), hands-free conversation, barge-in stop & whisper mode.</span>
+                            </div>
+                            <div class="cap-card">
+                                <strong>👁️ Vision & OCR</strong>
+                                <span>Screen understanding, OCR text extraction, UI detection & error diagnostics.</span>
+                            </div>
+                            <div class="cap-card">
+                                <strong>🖥️ Computer Control</strong>
+                                <span>Action approval system, file/folder operations, terminal execution & app launch.</span>
+                            </div>
+                            <div class="cap-card">
+                                <strong>📱 Android & Dev Core</strong>
+                                <span>ADB device manager, logcat error streaming, Git assistant & crash analyzer.</span>
+                            </div>
+                            <div class="cap-card">
+                                <strong>⚙️ Missions & Research</strong>
+                                <span>Multi-step autonomous missions, deep web research & source credibility citations.</span>
+                            </div>
+                        </div>
+                        <div class="msg-reflection-footer">
+                            🛡️ <em>Self-Reflection: All local security shields, memory databases, and neural models verified operational.</em>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Voice Trigger Controls -->
-                <div class="voice-box">
-                    <button id="micBtn" class="mic-button" onclick="toggleVoiceInput()">
-                        <div class="mic-pulse-ring"></div>
-                        <div class="mic-icon">🎙️</div>
-                        <div class="mic-text">
-                            <span id="micLabel">PUSH TO SPEAK</span>
-                            <small id="wakeWordHint">or say "Hey Jarvis" / "Tony"</small>
+            <!-- 4. Quick-Action Tool & Command Palette Ribbon (Docked directly above Chat Input) -->
+            <div class="quick-action-ribbon">
+                <div class="ribbon-scroll">
+                    <button class="ribbon-pill" onclick="triggerQuickAction('what_remember')">🧠 What do you remember?</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('add_memory')">➕ Add Memory Fact</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('screen_scan')">👁️ Screen Scan & OCR</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('adb_devices')">📱 ADB Devices</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('logcat_errors')">📱 Logcat Crashes</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('git_status')">💻 Git Status</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('mission_apk')">⚙️ Mission: Build APK</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('mission_dev')">⚙️ Mission: Dev Setup</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('deep_research')">🌐 Deep Research</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('system_diag')">📊 System Diagnostics</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('security_audit')">🛡️ Security Audit</button>
+                </div>
+            </div>
+
+            <!-- 5. Chat Input & Audio Command Deck -->
+            <div class="chat-input-deck">
+                <!-- Media / Screen / Attachment Tools -->
+                <div class="input-media-tools">
+                    <button class="media-tool-btn" onclick="captureAndSendScreen()" title="Inspect Current Screen (Vision OCR)">
+                        <span>🖥️</span>
+                    </button>
+                    <label class="media-tool-btn" title="Upload Image / Document / PDF for Vision Analysis">
+                        <span>📎</span>
+                        <input type="file" id="mediaUploadInput" accept="image/*,.pdf,.txt,.log" style="display:none;" onchange="handleFileUpload(this)">
+                    </label>
+                </div>
+
+                <!-- Central Text Area -->
+                <div class="input-text-wrapper">
+                    <textarea 
+                        id="chatInput" 
+                        placeholder="Ask TONY, speak, or execute command (e.g. 'What do you remember?', 'Build APK', 'Analyze logcat', 'Research AI agents')..."
+                        rows="1"
+                        onkeydown="handleChatKeyDown(event)"
+                        oninput="autoResizeChatInput(this)"
+                    ></textarea>
+                    <div class="input-glow-bar"></div>
+                </div>
+
+                <!-- Ambient Voice & Action Controls -->
+                <div class="input-action-controls">
+                    <!-- Ambient Listening / Wake Word Status -->
+                    <div class="ambient-indicator" id="ambientIndicator" title="Wake Word: 'Hey Tony' / 'Hey Jarvis' / 'Friday' / 'Ultron'">
+                        <span class="ambient-pulse"></span>
+                        <span class="ambient-text" id="ambientText">HEY TONY</span>
+                    </div>
+
+                    <!-- Barge-in Interruption Button (Active when assistant speaks) -->
+                    <button class="interrupt-btn" id="interruptBtn" onclick="bargeInInterrupt()" title="Interrupt Speech Immediately (Barge-In)" style="display:none;">
+                        <span>🛑 STOP</span>
+                    </button>
+
+                    <!-- Push-to-Talk Mic Button -->
+                    <button class="ptt-mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Push to Speak (Single Utterance or Continuous)">
+                        <span class="mic-icon" id="micIcon">🎙️</span>
+                        <div class="mic-waves" id="micWaves">
+                            <span></span><span></span><span></span>
                         </div>
                     </button>
+
+                    <!-- Send Message Button -->
+                    <button class="send-msg-btn" id="sendBtn" onclick="sendChatMessage()" title="Send Command (Enter)">
+                        <span>🚀</span>
+                    </button>
                 </div>
-
-                <!-- Real-Time Hardware Telemetry Gauges -->
-                <div class="telemetry-box">
-                    <div class="section-title">
-                        <span>SYSTEM TELEMETRY</span>
-                        <span class="tag">REALTIME</span>
-                    </div>
-                    <div class="telemetry-grid">
-                        <div class="metric-card">
-                            <div class="metric-header">
-                                <span>CPU LOAD</span>
-                                <strong id="cpu-val">0%</strong>
-                            </div>
-                            <div class="meter-bar"><div class="meter-fill" id="cpu-fill" style="width: 0%;"></div></div>
-                        </div>
-
-                        <div class="metric-card">
-                            <div class="metric-header">
-                                <span>RAM MEMORY</span>
-                                <strong id="ram-val">0%</strong>
-                            </div>
-                            <div class="meter-bar"><div class="meter-fill" id="ram-fill" style="width: 0%;"></div></div>
-                        </div>
-
-                        <div class="metric-row">
-                            <span class="m-label">DISK STORAGE:</span>
-                            <span class="m-val" id="disk-val">--%</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="m-label">NETWORK I/O:</span>
-                            <span class="m-val" id="net-val">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="m-label">POWER STATE:</span>
-                            <span class="m-val" id="battery-val">AC Power</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Tactical Arsenal Shortcuts -->
-                <div class="arsenal-box">
-                    <div class="section-title">
-                        <span>TACTICAL SHORTCUTS</span>
-                    </div>
-                    <div class="arsenal-grid">
-                        <button class="arsenal-btn" onclick="sendQuickPrompt('What do you remember about me?')">
-                            <span>🧠</span> My Memory
-                        </button>
-                        <button class="arsenal-btn" onclick="sendQuickPrompt('Why is my computer slow? Run diagnostics.')">
-                            <span>⚡</span> Slow PC Check
-                        </button>
-                        <button class="arsenal-btn" onclick="sendQuickPrompt('What is on my screen? Read any visible error.')">
-                            <span>👁️</span> Screen Scan
-                        </button>
-                        <button class="arsenal-btn" onclick="switchTacticalTab('missions')">
-                            <span>🛰️</span> Missions
-                        </button>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Center Panel: Dynamic Module Views -->
-            <section class="panel panel-center">
-                <!-- VIEW 1: CODEX CHAT & COMMAND VIEW -->
-                <div class="tab-view active" id="view-chat">
-                    <div class="chat-header">
-                        <div class="chat-info">
-                            <span class="chat-title" id="chatPersonaHeading">CODEX CHAT // T.O.N.Y.</span>
-                            <span class="chat-status" id="connectionStatus">● SECURE WEBSOCKET LINK</span>
-                        </div>
-                        <div class="chat-actions">
-                            <button class="action-btn" onclick="clearChat()" title="Clear Terminal Log">CLEAR</button>
-                            <button class="action-btn" onclick="stopSpeaking()" title="Stop Voice Speech">STOP AUDIO</button>
-                        </div>
-                    </div>
-
-                    <div class="messages-container" id="messagesContainer">
-                        <div class="message tony">
-                            <span class="sender">T.O.N.Y. // ARC CORE</span>
-                            <div class="content">All systems online. Cognitive memory, computer control sandbox, vision scanner, and multi-persona matrix are primed. How can I assist you, Boss?</div>
-                            <span class="time">System Initialized</span>
-                        </div>
-                    </div>
-
-                    <!-- Input Bar -->
-                    <div class="input-panel">
-                        <form id="chatForm" onsubmit="handleFormSubmit(event)">
-                            <div class="input-wrapper">
-                                <span class="prompt-symbol">></span>
-                                <input type="text" id="userInput" placeholder="Enter command or speak (e.g. 'Start development', 'Why is my PC slow', 'What do you remember', 'Analyze crash')..." autocomplete="off">
-                                <button type="submit" class="send-button" id="sendBtn">
-                                    <span>TRANSMIT</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- VIEW 2: MEMORY MATRIX VIEW -->
-                <div class="tab-view" id="view-memory">
-                    <div class="view-header">
-                        <div>
-                            <h2>🧠 PERSISTENT COGNITIVE MEMORY MATRIX</h2>
-                            <p class="view-sub">Long-term facts, user preferences, project knowledge, and encrypted local storage</p>
-                        </div>
-                        <div class="view-header-btns">
-                            <button class="action-pill-btn" onclick="exportMemoryData()">💾 Export JSON</button>
-                            <button class="action-pill-btn" onclick="triggerImportMemory()">📥 Import JSON</button>
-                            <input type="file" id="memoryImportFile" style="display:none" onchange="handleMemoryFile(this)">
-                        </div>
-                    </div>
-
-                    <!-- Memory Search & Category Filter Bar -->
-                    <div class="memory-filter-bar">
-                        <input type="text" id="memSearchInput" placeholder="🔍 Search memories by keyword or tag..." oninput="filterMemories(this.value)" class="form-input mem-search">
-                        <div class="mem-filter-chips">
-                            <button class="filter-chip active" onclick="setMemoryFilter('all')">All</button>
-                            <button class="filter-chip" onclick="setMemoryFilter('preference')">Preferences</button>
-                            <button class="filter-chip" onclick="setMemoryFilter('fact')">Facts</button>
-                            <button class="filter-chip" onclick="setMemoryFilter('project')">Projects</button>
-                            <button class="filter-chip" onclick="setMemoryFilter('habit')">Habits</button>
-                        </div>
-                    </div>
-
-                    <!-- Add Memory Form -->
-                    <div class="card add-memory-card">
-                        <h3>+ Add Permanent Knowledge / Preference</h3>
-                        <div class="add-memory-grid">
-                            <input type="text" id="newMemContent" placeholder="e.g. 'User prefers Kotlin and Jetpack Compose for Android development'" class="form-input">
-                            <select id="newMemCategory" class="form-select">
-                                <option value="preference">Preference</option>
-                                <option value="fact" selected>Fact</option>
-                                <option value="project">Project</option>
-                                <option value="habit">Habit</option>
-                            </select>
-                            <select id="newMemImportance" class="form-select">
-                                <option value="5">⭐⭐⭐⭐⭐ Critical (5)</option>
-                                <option value="4">⭐⭐⭐⭐ High (4)</option>
-                                <option value="3" selected>⭐⭐⭐ Medium (3)</option>
-                                <option value="2">⭐⭐ Low (2)</option>
-                            </select>
-                            <button class="modal-btn primary" onclick="addCustomMemory()">SAVE MEMORY</button>
-                        </div>
-                    </div>
-
-                    <!-- Memory List Cards -->
-                    <div class="memory-list-container" id="memoryListContainer">
-                        <div class="empty-state">Loading cognitive memory entries...</div>
-                    </div>
-                </div>
-
-                <!-- VIEW 3: MISSION CONTROL VIEW -->
-                <div class="tab-view" id="view-missions">
-                    <div class="view-header">
-                        <div>
-                            <h2>🛰️ TACTICAL MISSION TASK SYSTEM</h2>
-                            <p class="view-sub">Autonomous multi-step workflows, automated build pipelines, and health missions</p>
-                        </div>
-                    </div>
-
-                    <div class="missions-grid" id="missionsGrid">
-                        <!-- Loaded dynamically -->
-                    </div>
-
-                    <!-- Active Mission Execution Monitor -->
-                    <div class="card mission-monitor-card" id="activeMissionCard" style="display:none;">
-                        <div class="card-header">
-                            <h3 id="activeMissionTitle">▶ ACTIVE MISSION IN PROGRESS</h3>
-                            <span class="badge running" id="activeMissionStatus">RUNNING</span>
-                        </div>
-                        <div class="mission-steps-list" id="missionStepsList"></div>
-                        <div class="terminal-log-box" id="missionLogsBox"></div>
-                    </div>
-                </div>
-
-                <!-- VIEW 4: SECURITY & INTEGRITY VIEW -->
-                <div class="tab-view" id="view-security">
-                    <div class="view-header">
-                        <div>
-                            <h2>🛡️ SECURITY & INTEGRITY CENTER</h2>
-                            <p class="view-sub">Real-time threat assessment, environment integrity, sandbox controls & audit logging</p>
-                        </div>
-                        <button class="modal-btn primary" onclick="refreshSecurityAudit()">🔄 Run Integrity Audit</button>
-                    </div>
-
-                    <div class="security-dashboard-grid">
-                        <div class="card security-status-card">
-                            <span class="sec-label">CURRENT THREAT LEVEL</span>
-                            <div class="threat-display low" id="threatLevelDisplay">LOW (NOMINAL)</div>
-                            <small id="threatDetails">Environment integrity verified. Sandbox active.</small>
-                        </div>
-
-                        <div class="card security-mode-card">
-                            <span class="sec-label">ACTIVE SANDBOX POLICY</span>
-                            <div class="sandbox-buttons">
-                                <button class="mode-pill" data-mode="ASSIST" onclick="setSecurityMode('ASSIST')">🟢 ASSIST</button>
-                                <button class="mode-pill" data-mode="SAFE" onclick="setSecurityMode('SAFE')">🔒 SAFE</button>
-                                <button class="mode-pill" data-mode="AUTONOMOUS" onclick="setSecurityMode('AUTONOMOUS')">⚡ AUTONOMOUS</button>
-                                <button class="mode-pill" data-mode="LOCKDOWN" onclick="setSecurityMode('LOCKDOWN')">🛑 LOCKDOWN</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Security Audit Logs Table -->
-                    <div class="card audit-card">
-                        <h3>SECURITY AUDIT TRAIL</h3>
-                        <div class="table-container">
-                            <table class="hud-table">
-                                <thead>
-                                    <tr>
-                                        <th>TIME</th>
-                                        <th>ACTION</th>
-                                        <th>TARGET</th>
-                                        <th>STATUS</th>
-                                        <th>LEVEL</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="auditTableBody">
-                                    <tr><td colspan="5">Loading audit records...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- VIEW 5: DEV & ANDROID CORE VIEW -->
-                <div class="tab-view" id="view-developer">
-                    <div class="view-header">
-                        <div>
-                            <h2>📱 DEVELOPER & ANDROID CONTROL CENTER</h2>
-                            <p class="view-sub">ADB diagnostics, logcat error streaming, git operations & crash stack trace analyzer</p>
-                        </div>
-                    </div>
-
-                    <div class="dev-grid">
-                        <!-- Android ADB Panel -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3>🤖 ANDROID ADB STATUS</h3>
-                                <button class="action-btn" onclick="fetchAdbDevices()">Scan Devices</button>
-                            </div>
-                            <div id="adbDeviceList" class="info-box">Scanning ADB interface...</div>
-                            <div class="card-header" style="margin-top:12px;">
-                                <h4>Logcat Error Stream</h4>
-                                <button class="action-btn" onclick="fetchLogcatErrors()">Fetch Errors</button>
-                            </div>
-                            <div class="terminal-log-box" id="logcatStreamBox">No recent fatal exceptions.</div>
-                        </div>
-
-                        <!-- Git & Crash Analyzer -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3>🔀 GIT CODEBASE STATUS</h3>
-                                <button class="action-btn" onclick="fetchGitStatus()">Refresh Git</button>
-                            </div>
-                            <div id="gitStatusBox" class="info-box">Branch: main (Clean)</div>
-
-                            <div class="card-header" style="margin-top:12px;">
-                                <h4>Crash Stack Trace Analyzer</h4>
-                            </div>
-                            <textarea id="crashInput" class="form-textarea" placeholder="Paste crash stack trace or NullPointerException here..."></textarea>
-                            <button class="modal-btn primary" onclick="analyzeCrashTrace()">ANALYZE CRASH</button>
-                            <div id="crashResultBox" class="info-box" style="margin-top:8px; display:none;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- VIEW 6: WORKFLOWS & MACROS VIEW -->
-                <div class="tab-view" id="view-workflows">
-                    <div class="view-header">
-                        <div>
-                            <h2>⚡ AUTOMATIONS & WORKFLOW MACROS</h2>
-                            <p class="view-sub">Trigger multi-app launch routines and developer workspace setups</p>
-                        </div>
-                    </div>
-
-                    <div class="workflows-list" id="workflowsList">
-                        <div class="card workflow-card">
-                            <div class="wf-info">
-                                <h3>🚀 Start Development Environment</h3>
-                                <p>Launches VS Code, Developer Chrome, and audits system resource availability.</p>
-                            </div>
-                            <button class="modal-btn primary" onclick="triggerWorkflow('start_development')">▶ EXECUTE</button>
-                        </div>
-
-                        <div class="card workflow-card">
-                            <div class="wf-info">
-                                <h3>🧹 Clean Workspace & Verify Health</h3>
-                                <p>Audits disk storage, memory headroom, and tests workspace integrity.</p>
-                            </div>
-                            <button class="modal-btn primary" onclick="triggerWorkflow('clean_temp_workspace')">▶ EXECUTE</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- VIEW 7: DEEP RESEARCH VIEW -->
-                <div class="tab-view" id="view-research">
-                    <div class="view-header">
-                        <div>
-                            <h2>🔍 AUTONOMOUS CODEX RESEARCH ENGINE</h2>
-                            <p class="view-sub">Multi-source web synthesis, architectural evaluations & grounded citations</p>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="research-input-row">
-                            <input type="text" id="researchTopicInput" placeholder="Enter research query (e.g. 'Best practices for Android NDK C++ interop')..." class="form-input">
-                            <button class="modal-btn primary" onclick="executeResearchQuery()">START RESEARCH</button>
-                        </div>
-                    </div>
-
-                    <div class="card research-report-card" id="researchReportCard" style="display:none;">
-                        <div class="markdown-body" id="researchReportContent"></div>
-                    </div>
-                </div>
-
-                <!-- VIEW 8: DEEP TELEMETRY VIEW -->
-                <div class="tab-view" id="view-telemetry">
-                    <div class="view-header">
-                        <div>
-                            <h2>📊 ADVANCED HARDWARE & PROCESS TELEMETRY</h2>
-                            <p class="view-sub">Real-time bottleneck analysis, process hierarchy, and system optimization</p>
-                        </div>
-                        <button class="modal-btn primary" onclick="runSlowPCDiagnosis()">⚡ Diagnose Bottlenecks</button>
-                    </div>
-
-                    <div class="deep-telemetry-grid">
-                        <div class="card" id="slowPcReportCard" style="grid-column: 1 / -1; display:none;">
-                            <h3>⚡ BOTTLENECK DIAGNOSTIC REPORT</h3>
-                            <div id="slowPcContent" class="info-box"></div>
-                        </div>
-
-                        <div class="card">
-                            <h3>TOP CPU CONSUMING PROCESSES</h3>
-                            <div class="terminal-log-box" id="topCpuProcsBox">Scanning processes...</div>
-                        </div>
-
-                        <div class="card">
-                            <h3>TOP MEMORY CONSUMING PROCESSES</h3>
-                            <div class="terminal-log-box" id="topRamProcsBox">Scanning processes...</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            </div>
         </main>
     </div>
 
-    <!-- Voice Matrix Calibrator Modal -->
-    <div class="modal-backdrop hidden" id="voiceModal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <div class="modal-title">
-                    <span>🎙️ VOICE MATRIX CALIBRATOR</span>
-                    <small>Configure independent distinct voices for each persona</small>
-                </div>
-                <button class="modal-close-btn" onclick="closeVoiceModal()">✕</button>
+    <!-- 6. Slide-Over Drawers & Modals (Integrated without leaving Chat) -->
+
+    <!-- Memory & Knowledge Vault Slide-Over Drawer -->
+    <div class="slide-drawer" id="memoryDrawer">
+        <div class="drawer-header">
+            <h3>🧠 Long-Term Memory & Knowledge Vault</h3>
+            <button class="drawer-close-btn" onclick="closeDrawer('memoryDrawer')">✕</button>
+        </div>
+        <div class="drawer-body">
+            <div class="drawer-search-bar">
+                <input type="text" id="memorySearchInput" placeholder="Search memories, facts, preferences..." oninput="filterMemories(this.value)">
+                <button class="hud-pill" onclick="promptAddMemory()">+ ADD FACT</button>
             </div>
-            <div class="modal-body">
-                <!-- Jarvis Voice Config -->
-                <div class="voice-config-row">
-                    <div class="v-persona-info">
-                        <span class="v-avatar">🛡️</span>
-                        <div>
-                            <strong>J.A.R.V.I.S.</strong>
-                            <small>British, calm, baritone</small>
-                        </div>
-                    </div>
-                    <div class="v-controls">
-                        <select id="voiceSelect_jarvis" onchange="updatePersonaVoice('jarvis', this.value)"></select>
-                        <button class="test-v-btn" onclick="testPersonaVoice('jarvis')">▶️ Test</button>
-                    </div>
-                </div>
-
-                <!-- Friday Voice Config -->
-                <div class="voice-config-row">
-                    <div class="v-persona-info">
-                        <span class="v-avatar">⚡</span>
-                        <div>
-                            <strong>F.R.I.D.A.Y.</strong>
-                            <small>Warm, conversational, female</small>
-                        </div>
-                    </div>
-                    <div class="v-controls">
-                        <select id="voiceSelect_friday" onchange="updatePersonaVoice('friday', this.value)"></select>
-                        <button class="test-v-btn" onclick="testPersonaVoice('friday')">▶️ Test</button>
-                    </div>
-                </div>
-
-                <!-- Tony Voice Config -->
-                <div class="voice-config-row">
-                    <div class="v-persona-info">
-                        <span class="v-avatar">🌐</span>
-                        <div>
-                            <strong>T.O.N.Y.</strong>
-                            <small>Charismatic, energetic inventor</small>
-                        </div>
-                    </div>
-                    <div class="v-controls">
-                        <select id="voiceSelect_tony" onchange="updatePersonaVoice('tony', this.value)"></select>
-                        <button class="test-v-btn" onclick="testPersonaVoice('tony')">▶️ Test</button>
-                    </div>
-                </div>
-
-                <!-- Ultron Voice Config -->
-                <div class="voice-config-row">
-                    <div class="v-persona-info">
-                        <span class="v-avatar">👁️</span>
-                        <div>
-                            <strong>U.L.T.R.O.N.</strong>
-                            <small>Deep, synthetic, imposing</small>
-                        </div>
-                    </div>
-                    <div class="v-controls">
-                        <select id="voiceSelect_ultron" onchange="updatePersonaVoice('ultron', this.value)"></select>
-                        <button class="test-v-btn" onclick="testPersonaVoice('ultron')">▶️ Test</button>
-                    </div>
-                </div>
+            <div class="memory-summary-card" id="memorySummaryCard">
+                <strong>Memory Metrics:</strong> <span id="memoryMetrics">Loading...</span>
             </div>
-            <div class="modal-footer">
-                <button class="modal-btn secondary" onclick="resetVoicesToAuto()">🔄 Auto-Detect Best Voices</button>
-                <button class="modal-btn primary" onclick="closeVoiceModal()">✓ Save & Close</button>
+            <div class="memory-list-container" id="memoryListContainer">
+                <!-- Dynamically populated memories -->
+            </div>
+            <div class="drawer-actions">
+                <button class="hud-pill" onclick="exportMemories()">📥 Export JSON</button>
+                <label class="hud-pill">
+                    📤 Import JSON
+                    <input type="file" accept=".json" style="display:none;" onchange="importMemories(this)">
+                </label>
+                <button class="hud-pill danger" onclick="purgeMemories()">⚠️ Purge All</button>
             </div>
         </div>
     </div>
 
-    <!-- Dangerous Action Confirmation Modal -->
-    <div class="modal-backdrop hidden" id="confirmModal">
+    <!-- Plugin Management Slide-Over Drawer -->
+    <div class="slide-drawer" id="pluginDrawer">
+        <div class="drawer-header">
+            <h3>🧩 AI Plugins & Tool Sandboxes</h3>
+            <button class="drawer-close-btn" onclick="closeDrawer('pluginDrawer')">✕</button>
+        </div>
+        <div class="drawer-body">
+            <div class="plugin-item">
+                <div class="plug-info">
+                    <strong>📱 Android ADB & Device Core</strong>
+                    <span>Enables ADB shell, dumpsys, APK management and device telemetry.</span>
+                </div>
+                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('adb', this.checked)"><span class="slider"></span></label>
+            </div>
+            <div class="plugin-item">
+                <div class="plug-info">
+                    <strong>👁️ Vision & Screen OCR Engine</strong>
+                    <span>Enables viewport screenshot capture, OCR error extraction, and UI bounds detection.</span>
+                </div>
+                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('vision', this.checked)"><span class="slider"></span></label>
+            </div>
+            <div class="plugin-item">
+                <div class="plug-info">
+                    <strong>🌐 Deep Autonomous Web Search</strong>
+                    <span>Enables multi-source research scraping and automated source credibility scoring.</span>
+                </div>
+                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('research', this.checked)"><span class="slider"></span></label>
+            </div>
+            <div class="plugin-item">
+                <div class="plug-info">
+                    <strong>💻 Developer Core & Git Suite</strong>
+                    <span>Enables stack trace parsing, git repo scanning, and build monitoring.</span>
+                </div>
+                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('dev', this.checked)"><span class="slider"></span></label>
+            </div>
+            <div class="plugin-item">
+                <div class="plug-info">
+                    <strong>⚙️ Multi-Step Mission Engine</strong>
+                    <span>Enables automated mission macros, build sequences, and workflow triggers.</span>
+                </div>
+                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('missions', this.checked)"><span class="slider"></span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Hardware Diagnostics Modal -->
+    <div class="hud-modal" id="diagModal">
         <div class="modal-card">
             <div class="modal-header">
-                <div class="modal-title">
-                    <span style="color:#ff3344;">⚠️ SECURITY AUTHORIZATION REQUIRED</span>
-                    <small>Potentially destructive computer operation requested</small>
-                </div>
+                <h3>📊 System Hardware & Telemetry Matrix</h3>
+                <button class="drawer-close-btn" onclick="closeModal('diagModal')">✕</button>
+            </div>
+            <div class="modal-body" id="diagModalBody">
+                <p>Loading real-time hardware telemetry...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Calibration Modal -->
+    <div class="hud-modal" id="voiceModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>🎙️ Voice Engine & Persona Calibrator</h3>
+                <button class="drawer-close-btn" onclick="closeModal('voiceModal')">✕</button>
             </div>
             <div class="modal-body">
-                <p id="confirmModalText">Operation description...</p>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn secondary" onclick="resolveConfirmModal(false)">✕ DENY & BLOCK</button>
-                <button class="modal-btn primary" style="background:#ff3344; border-color:#ff3344;" onclick="resolveConfirmModal(true)">✓ AUTHORIZE ACTION</button>
+                <div class="voice-persona-calibrator">
+                    <label>Select Active Persona:</label>
+                    <select id="modalPersonaSelect" onchange="updateVoiceModalPersona(this.value)">
+                        <option value="jarvis">J.A.R.V.I.S. (UK Male)</option>
+                        <option value="friday">F.R.I.D.A.Y. (Irish/Female)</option>
+                        <option value="ultron">U.L.T.R.O.N. (Deep Tactical)</option>
+                        <option value="tony" selected>T.O.N.Y. (Arc Core)</option>
+                        <option value="tactical">TACTICAL FUSION</option>
+                    </select>
+                </div>
+                <div class="voice-persona-calibrator">
+                    <label>Installed Synthesizer Voice:</label>
+                    <select id="modalVoiceSelect" onchange="saveCustomVoiceForPersona()"></select>
+                </div>
+                <div class="voice-sliders">
+                    <div>
+                        <label>Pitch:</label> <span id="pitchValDisplay">1.0</span>
+                        <input type="range" id="pitchSlider" min="0.3" max="1.8" step="0.05" value="1.0" oninput="updatePitchDisplay(this.value)">
+                    </div>
+                    <div>
+                        <label>Speed Rate:</label> <span id="rateValDisplay">1.2x</span>
+                        <input type="range" id="rateSlider" min="0.5" max="2.0" step="0.05" value="1.2" oninput="updateRateDisplay(this.value)">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="hud-pill" onclick="testCurrentVoice()">▶ Test Voice Synthesis</button>
+                    <button class="hud-pill danger" onclick="resetDefaultVoices()">↺ Reset Defaults</button>
+                </div>
             </div>
         </div>
     </div>
