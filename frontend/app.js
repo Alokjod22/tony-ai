@@ -6,10 +6,14 @@ let isRecording = false;
 let recognition = null;
 let voiceOutputEnabled = true;
 let continuousMode = false;
+let sfxEnabled = true;
 let userSpeedMultiplier = 1.2;
 let activeTab = "chat";
 let currentPersona = "tony";
 let currentSecurityMode = "ASSIST";
+let memoryFilterCategory = "all";
+let memorySearchTerm = "";
+let cachedMemoriesList = [];
 
 const PERSONA_CONFIGS = {
     jarvis: {
@@ -286,7 +290,7 @@ function cleanTextForSpeech(text) {
 
 function streamSpeakResponse(fullText) {
     if (!voiceOutputEnabled || !('speechSynthesis' in window)) return;
-    stopSpeaking(); // Cancel ongoing monologue on new response (Barge-in)
+    stopSpeaking();
     speechQueue = [];
 
     const clean = cleanTextForSpeech(fullText);
@@ -367,13 +371,24 @@ function toggleVoiceOutput() {
     }
 }
 
+function toggleSfx() {
+    sfxEnabled = !sfxEnabled;
+    const icon = document.getElementById("sfxIcon");
+    const btn = document.getElementById("sfxToggleBtn");
+    if (sfxEnabled) {
+        if (icon) icon.innerText = "🔔";
+        if (btn) btn.style.opacity = "1";
+        playSciFiSound("activate");
+    } else {
+        if (icon) icon.innerText = "🔕";
+        if (btn) btn.style.opacity = "0.5";
+    }
+}
+
 // --- Speech Recognition & Continuous Hands-Free Mode ---
 function initSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        console.warn("Speech Recognition API unavailable in this browser.");
-        return;
-    }
+    if (!SpeechRecognition) return;
 
     recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -392,15 +407,14 @@ function initSpeechRecognition() {
     recognition.onresult = (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.trim();
         if (transcript) {
-            stopSpeaking(); // Barge-in: User started speaking, interrupt AI voice
+            stopSpeaking();
             const input = document.getElementById("userInput");
             if (input) input.value = transcript;
             submitChatMessage(transcript);
         }
     };
 
-    recognition.onerror = (e) => {
-        console.warn("Speech error:", e.error);
+    recognition.onerror = () => {
         if (!continuousMode) {
             isRecording = false;
             const micBtn = document.getElementById("micBtn");
@@ -466,7 +480,7 @@ function initWebSocket() {
 
     ws.onmessage = (event) => {
         try {
-            const msg = jsonParseSafe(event.data);
+            const msg = JSON.parse(event.data);
             if (!msg) return;
 
             if (msg.type === "telemetry") {
@@ -484,10 +498,6 @@ function initWebSocket() {
         if (status) status.innerText = "○ LINK RECONNECTING...";
         setTimeout(initWebSocket, 3000);
     };
-}
-
-function jsonParseSafe(str) {
-    try { return JSON.parse(str); } catch (e) { return null; }
 }
 
 // --- UI Messaging & Chat Transmit ---
@@ -509,8 +519,8 @@ async function submitChatMessage(text) {
     renderUserMessage(text);
     setStatus("THINKING");
 
-    // Check for direct voice speed/persona commands
-    const lower = text.lower ? text.lower() : text.toLowerCase();
+    // Check voice speed/persona voice commands
+    const lower = text.toLowerCase();
     if (lower.includes("speak faster")) {
         setSpeechRate(1.35);
         document.getElementById("speedSelect").value = "1.35";
@@ -591,6 +601,14 @@ function setStatus(state) {
     currentState = state;
     const el = document.getElementById("coreStatus");
     if (el) el.innerText = state;
+    const waveform = document.getElementById("audioWaveform");
+    if (waveform) {
+        if (state === "SPEAKING" || state === "LISTENING") {
+            waveform.classList.add("active");
+        } else {
+            waveform.classList.remove("active");
+        }
+    }
 }
 
 // --- 1. Memory Core Management ---
@@ -599,26 +617,58 @@ async function loadMemories() {
     if (!container) return;
     try {
         const res = await fetch("/api/memory");
-        const list = await res.json();
-        if (!list || list.length === 0) {
-            container.innerHTML = '<div class="empty-state">No persistent memories recorded yet. Add one above!</div>';
-            return;
-        }
-        container.innerHTML = list.map(m => `
-            <div class="memory-card">
-                <div>
-                    <div class="mem-meta">
-                        <span class="mem-tag">${m.category.toUpperCase()}</span>
-                        <span class="importance-stars">${'⭐'.repeat(m.importance || 3)}</span>
-                    </div>
-                    <div class="mem-text">${escapeHtml(m.content)}</div>
-                </div>
-                <button class="delete-btn" onclick="deleteMemoryEntry(${m.id})">✕ Forget</button>
-            </div>
-        `).join("");
+        cachedMemoriesList = await res.json();
+        renderFilteredMemories();
+        const badge = document.getElementById("memoryCountBadge");
+        if (badge) badge.innerText = cachedMemoriesList.length;
     } catch (e) {
         container.innerHTML = `<div class="empty-state">Error loading memories: ${e.message}</div>`;
     }
+}
+
+function setMemoryFilter(category) {
+    memoryFilterCategory = category;
+    document.querySelectorAll(".filter-chip").forEach(c => {
+        if (c.innerText.toLowerCase().includes(category)) c.classList.add("active");
+        else c.classList.remove("active");
+    });
+    renderFilteredMemories();
+}
+
+function filterMemories(term) {
+    memorySearchTerm = term.toLowerCase().trim();
+    renderFilteredMemories();
+}
+
+function renderFilteredMemories() {
+    const container = document.getElementById("memoryListContainer");
+    if (!container) return;
+
+    let filtered = cachedMemoriesList;
+    if (memoryFilterCategory !== "all") {
+        filtered = filtered.filter(m => m.category.toLowerCase() === memoryFilterCategory.toLowerCase());
+    }
+    if (memorySearchTerm) {
+        filtered = filtered.filter(m => m.content.toLowerCase().includes(memorySearchTerm) || m.category.toLowerCase().includes(memorySearchTerm));
+    }
+
+    if (!filtered || filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">No matching memories found. Add one above!</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(m => `
+        <div class="memory-card">
+            <div>
+                <div class="mem-meta">
+                    <span class="mem-tag">${m.category.toUpperCase()}</span>
+                    <span class="importance-stars">${'⭐'.repeat(m.importance || 3)}</span>
+                </div>
+                <div class="mem-text">${escapeHtml(m.content)}</div>
+            </div>
+            <button class="delete-btn" onclick="deleteMemoryEntry(${m.id})">✕ Forget</button>
+        </div>
+    `).join("");
 }
 
 async function addCustomMemory() {
@@ -749,13 +799,11 @@ async function refreshSecurityAudit() {
             threatDetails.innerText = `Security Policy: ${data.security_mode} | Environment: ${data.environment_integrity}`;
         }
 
-        // Update sandbox pills
         document.querySelectorAll(".mode-pill").forEach(btn => {
             if (btn.getAttribute("data-mode") === data.security_mode) btn.classList.add("active");
             else btn.classList.remove("active");
         });
 
-        // Audit log table
         const tbody = document.getElementById("auditTableBody");
         if (tbody && data.audit_logs) {
             tbody.innerHTML = data.audit_logs.map(log => `
@@ -923,6 +971,7 @@ function getAudioContext() {
 }
 
 function playSciFiSound(type) {
+    if (!sfxEnabled) return;
     try {
         const ctx = getAudioContext();
         const osc = ctx.createOscillator();
@@ -933,10 +982,10 @@ function playSciFiSound(type) {
         if (type === 'activate') {
             osc.frequency.setValueAtTime(440, now);
             osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
-            gain.gain.setValueAtTime(0.08, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            gain.gain.setValueAtTime(0.06, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
             osc.start(now);
-            osc.stop(now + 0.15);
+            osc.stop(now + 0.14);
         }
     } catch (e) {}
 }
@@ -982,7 +1031,7 @@ function drawArcReactor() {
     ctx.arc(centerX, centerY, glowRad, 0, Math.PI * 2);
     ctx.fill();
 
-    // Outer Ring
+    // Outer Concentric Ring
     ctx.strokeStyle = hexColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -993,18 +1042,36 @@ function drawArcReactor() {
     ctx.save();
     ctx.translate(centerX, centerY);
     ctx.rotate(animAngle);
-    const segments = currentPersona === "ultron" ? 6 : 8;
+    const segments = currentPersona === "ultron" ? 6 : (currentPersona === "friday" ? 8 : 10);
     for (let i = 0; i < segments; i++) {
         const theta = (i * Math.PI * 2) / segments;
         ctx.strokeStyle = hexColor;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3.5;
         ctx.beginPath();
         ctx.arc(0, 0, 75, theta, theta + 0.35);
         ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(Math.cos(theta) * 75, Math.sin(theta) * 75, 2.5, 0, Math.PI * 2);
+        ctx.fill();
     }
     ctx.restore();
 
-    // Core Pulse
+    // Counter-Rotating Inner Dashed Ring
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(-animAngle * 1.6);
+    ctx.strokeStyle = hexColor + "aa";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.arc(0, 0, 52, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // Core Pulse Node
     const coreRadius = 22 + Math.sin(pulseVal * 2) * (currentState === "SPEAKING" ? 5 : 2);
     const coreGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
     coreGrad.addColorStop(0, "#ffffff");
@@ -1034,4 +1101,5 @@ if ('speechSynthesis' in window) {
 window.addEventListener('DOMContentLoaded', () => {
     initWebSocket();
     switchPersona('tony');
+    loadMemories();
 });

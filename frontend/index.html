@@ -3,56 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TONY AI // Codex Super-Intelligence & Tactical Operating Layer</title>
+    <title>TONY AI // Codex Tactical & Super-Intelligence Operating Layer</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Orbitron:wght@400;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body data-theme="tony">
+    <!-- Cybernetic HUD Background Elements -->
+    <div class="hud-background-grid"></div>
+    <div class="hud-scanlines"></div>
+    <div class="hud-corner top-left"></div>
+    <div class="hud-corner top-right"></div>
+    <div class="hud-corner bottom-left"></div>
+    <div class="hud-corner bottom-right"></div>
+
     <div class="hud-overlay">
-        <!-- Top Navigation & Persona Matrix Bar -->
+        <!-- Top Command Header Bar -->
         <header class="top-bar">
+            <!-- Brand & Holographic Core Logo -->
             <div class="brand-section">
-                <div class="status-indicator live" id="liveIndicator"></div>
+                <div class="status-indicator-ring">
+                    <div class="status-indicator-dot" id="liveIndicator"></div>
+                </div>
                 <div class="brand-titles">
-                    <span class="logo-text">TONY <span class="version-tag">CODEX v3.0 OS</span></span>
-                    <span class="sub-text">TACTICAL SUPER-INTELLIGENCE MATRIX</span>
+                    <div class="brand-main">
+                        <span class="logo-text">T.O.N.Y.</span>
+                        <span class="version-tag">CODEX v3.5 PRO</span>
+                        <span class="hud-pill live-pill">● SECURE LINK</span>
+                    </div>
+                    <span class="sub-text">TACTICAL SUPER-INTELLIGENCE OPERATING LAYER</span>
                 </div>
             </div>
 
-            <!-- Persona Switcher Selector -->
+            <!-- Persona Switcher Selector Tabs -->
             <div class="persona-selector">
-                <button class="persona-btn" data-persona="jarvis" onclick="switchPersona('jarvis')">
+                <button class="persona-btn" data-persona="jarvis" onclick="switchPersona('jarvis')" title="Calm, analytical UK majordomo">
                     <span class="p-icon">🛡️</span>
                     <span class="p-name">J.A.R.V.I.S.</span>
                     <span class="p-badge">UK MALE</span>
                 </button>
-                <button class="persona-btn" data-persona="friday" onclick="switchPersona('friday')">
+                <button class="persona-btn" data-persona="friday" onclick="switchPersona('friday')" title="Warm, intelligent tactical female AI">
                     <span class="p-icon">⚡</span>
                     <span class="p-name">F.R.I.D.A.Y.</span>
                     <span class="p-badge">FEMALE</span>
                 </button>
-                <button class="persona-btn" data-persona="ultron" onclick="switchPersona('ultron')">
+                <button class="persona-btn" data-persona="ultron" onclick="switchPersona('ultron')" title="Calculating, imposing super-intelligence">
                     <span class="p-icon">👁️</span>
                     <span class="p-name">U.L.T.R.O.N.</span>
                     <span class="p-badge">TACTICAL</span>
                 </button>
-                <button class="persona-btn active" data-persona="tony" onclick="switchPersona('tony')">
+                <button class="persona-btn active" data-persona="tony" onclick="switchPersona('tony')" title="Charismatic inventor & Arc Core">
                     <span class="p-icon">🌐</span>
                     <span class="p-name">T.O.N.Y.</span>
                     <span class="p-badge">ARC CORE</span>
                 </button>
-                <button class="persona-btn" data-persona="tactical" onclick="switchPersona('tactical')">
+                <button class="persona-btn" data-persona="tactical" onclick="switchPersona('tactical')" title="Unified multi-persona battle matrix">
                     <span class="p-icon">⚔️</span>
                     <span class="p-name">FUSION</span>
-                    <span class="p-badge">TACTICAL</span>
+                    <span class="p-badge">MAX TACTICAL</span>
                 </button>
             </div>
 
-            <!-- Header Controls: Sandbox Level, Voice Calibrator, Continuous Mode, Speed, Clock -->
+            <!-- Header Controls: Sandbox Level, Voice Calibrator, Continuous Mode, Speed, Sound Toggle, Clock -->
             <div class="header-controls">
                 <div class="control-group">
-                    <span class="ctrl-label">SANDBOX:</span>
+                    <span class="ctrl-label">SECURITY:</span>
                     <select id="sandboxSelect" onchange="setSecurityMode(this.value)">
                         <option value="ASSIST" selected>🟢 ASSIST</option>
                         <option value="SAFE">🔒 SAFE</option>
@@ -61,11 +76,11 @@
                     </select>
                 </div>
 
-                <button class="action-pill-btn" onclick="openVoiceModal()" title="Calibrate Persona Voices">
+                <button class="action-pill-btn" onclick="openVoiceModal()" title="Calibrate Persona Voices & Pitches">
                     <span>🎙️ CALIBRATE VOICES</span>
                 </button>
 
-                <button class="action-pill-btn toggle-listen-btn" id="continuousBtn" onclick="toggleContinuousMode()" title="Toggle Continuous Hands-Free Speech">
+                <button class="action-pill-btn toggle-listen-btn" id="continuousBtn" onclick="toggleContinuousMode()" title="Toggle Hands-Free Continuous Conversation">
                     <span id="continuousLabel">👂 CONVERSATION: OFF</span>
                 </button>
 
@@ -79,8 +94,12 @@
                     </select>
                 </div>
 
-                <button class="icon-toggle-btn" id="voiceToggleBtn" onclick="toggleVoiceOutput()" title="Toggle Voice Speech">
+                <button class="icon-toggle-btn" id="voiceToggleBtn" onclick="toggleVoiceOutput()" title="Toggle Voice Audio Synthesis">
                     <span id="voiceIcon">🔊</span>
+                </button>
+
+                <button class="icon-toggle-btn" id="sfxToggleBtn" onclick="toggleSfx()" title="Toggle Sci-Fi Sound Effects">
+                    <span id="sfxIcon">🔔</span>
                 </button>
 
                 <div class="system-time" id="clock">00:00:00</div>
@@ -95,7 +114,8 @@
             </button>
             <button class="nav-tab-btn" data-tab="memory" onclick="switchTacticalTab('memory')">
                 <span class="tab-icon">🧠</span>
-                <span class="tab-name">MEMORY CORE</span>
+                <span class="tab-name">MEMORY MATRIX</span>
+                <span class="tab-badge" id="memoryCountBadge">0</span>
             </button>
             <button class="nav-tab-btn" data-tab="missions" onclick="switchTacticalTab('missions')">
                 <span class="tab-icon">🛰️</span>
@@ -125,9 +145,9 @@
 
         <!-- Main Codex Grid Layout -->
         <main class="codex-grid">
-            <!-- Left Panel: Arc Reactor Hologram, Telemetry & Quick Arsenal -->
+            <!-- Left Panel: Holographic Arc Reactor, Waveform, Hardware Gauges & Quick Arsenal -->
             <aside class="panel panel-left">
-                <!-- Arc Reactor Visualizer -->
+                <!-- Arc Reactor Holographic Visualizer -->
                 <div class="core-box">
                     <div class="core-header">
                         <span class="core-title" id="corePersonaTitle">ARC REACTOR // T.O.N.Y. MATRIX</span>
@@ -135,7 +155,12 @@
                     </div>
                     <div class="canvas-wrapper">
                         <canvas id="arcCanvas" width="280" height="280"></canvas>
-                        <div class="core-status" id="coreStatus">STANDBY</div>
+                        <div class="core-status-overlay">
+                            <div class="core-status" id="coreStatus">STANDBY</div>
+                            <div class="audio-waveform-bars" id="audioWaveform">
+                                <span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -151,7 +176,7 @@
                     </button>
                 </div>
 
-                <!-- Real-Time Hardware Telemetry -->
+                <!-- Real-Time Hardware Telemetry Gauges -->
                 <div class="telemetry-box">
                     <div class="section-title">
                         <span>SYSTEM TELEMETRY</span>
@@ -160,7 +185,7 @@
                     <div class="telemetry-grid">
                         <div class="metric-card">
                             <div class="metric-header">
-                                <span>CPU USAGE</span>
+                                <span>CPU LOAD</span>
                                 <strong id="cpu-val">0%</strong>
                             </div>
                             <div class="meter-bar"><div class="meter-fill" id="cpu-fill" style="width: 0%;"></div></div>
@@ -175,7 +200,7 @@
                         </div>
 
                         <div class="metric-row">
-                            <span class="m-label">DISK USAGE:</span>
+                            <span class="m-label">DISK STORAGE:</span>
                             <span class="m-val" id="disk-val">--%</span>
                         </div>
                         <div class="metric-row">
@@ -183,13 +208,13 @@
                             <span class="m-val" id="net-val">--</span>
                         </div>
                         <div class="metric-row">
-                            <span class="m-label">POWER / BATTERY:</span>
+                            <span class="m-label">POWER STATE:</span>
                             <span class="m-val" id="battery-val">AC Power</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Quick Tactical Arsenal Buttons -->
+                <!-- Quick Tactical Arsenal Shortcuts -->
                 <div class="arsenal-box">
                     <div class="section-title">
                         <span>TACTICAL SHORTCUTS</span>
@@ -198,7 +223,7 @@
                         <button class="arsenal-btn" onclick="sendQuickPrompt('What do you remember about me?')">
                             <span>🧠</span> My Memory
                         </button>
-                        <button class="arsenal-btn" onclick="sendQuickPrompt('Why is my computer slow? Analyze diagnostics.')">
+                        <button class="arsenal-btn" onclick="sendQuickPrompt('Why is my computer slow? Run diagnostics.')">
                             <span>⚡</span> Slow PC Check
                         </button>
                         <button class="arsenal-btn" onclick="sendQuickPrompt('What is on my screen? Read any visible error.')">
@@ -213,7 +238,7 @@
 
             <!-- Center Panel: Dynamic Module Views -->
             <section class="panel panel-center">
-                <!-- VIEW 1: CODEX CHAT VIEW -->
+                <!-- VIEW 1: CODEX CHAT & COMMAND VIEW -->
                 <div class="tab-view active" id="view-chat">
                     <div class="chat-header">
                         <div class="chat-info">
@@ -229,7 +254,7 @@
                     <div class="messages-container" id="messagesContainer">
                         <div class="message tony">
                             <span class="sender">T.O.N.Y. // ARC CORE</span>
-                            <div class="content">All systems online. Cognitive memory, computer control, vision scanner, and multi-persona matrix are primed. How can I assist you, Boss?</div>
+                            <div class="content">All systems online. Cognitive memory, computer control sandbox, vision scanner, and multi-persona matrix are primed. How can I assist you, Boss?</div>
                             <span class="time">System Initialized</span>
                         </div>
                     </div>
@@ -239,7 +264,7 @@
                         <form id="chatForm" onsubmit="handleFormSubmit(event)">
                             <div class="input-wrapper">
                                 <span class="prompt-symbol">></span>
-                                <input type="text" id="userInput" placeholder="Enter command or speak (e.g. 'Start development', 'Why is my PC slow', 'What do you remember')..." autocomplete="off">
+                                <input type="text" id="userInput" placeholder="Enter command or speak (e.g. 'Start development', 'Why is my PC slow', 'What do you remember', 'Analyze crash')..." autocomplete="off">
                                 <button type="submit" class="send-button" id="sendBtn">
                                     <span>TRANSMIT</span>
                                 </button>
@@ -248,7 +273,7 @@
                     </div>
                 </div>
 
-                <!-- VIEW 2: MEMORY CORE VIEW -->
+                <!-- VIEW 2: MEMORY MATRIX VIEW -->
                 <div class="tab-view" id="view-memory">
                     <div class="view-header">
                         <div>
@@ -257,8 +282,20 @@
                         </div>
                         <div class="view-header-btns">
                             <button class="action-pill-btn" onclick="exportMemoryData()">💾 Export JSON</button>
-                            <button class="action-pill-btn" onclick="triggerImportMemory()">📥 Import</button>
+                            <button class="action-pill-btn" onclick="triggerImportMemory()">📥 Import JSON</button>
                             <input type="file" id="memoryImportFile" style="display:none" onchange="handleMemoryFile(this)">
+                        </div>
+                    </div>
+
+                    <!-- Memory Search & Category Filter Bar -->
+                    <div class="memory-filter-bar">
+                        <input type="text" id="memSearchInput" placeholder="🔍 Search memories by keyword or tag..." oninput="filterMemories(this.value)" class="form-input mem-search">
+                        <div class="mem-filter-chips">
+                            <button class="filter-chip active" onclick="setMemoryFilter('all')">All</button>
+                            <button class="filter-chip" onclick="setMemoryFilter('preference')">Preferences</button>
+                            <button class="filter-chip" onclick="setMemoryFilter('fact')">Facts</button>
+                            <button class="filter-chip" onclick="setMemoryFilter('project')">Projects</button>
+                            <button class="filter-chip" onclick="setMemoryFilter('habit')">Habits</button>
                         </div>
                     </div>
 
