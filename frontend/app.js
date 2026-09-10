@@ -24,10 +24,16 @@ function speakInBrowser(text) {
         utterance.rate = 1.05;
         utterance.pitch = 0.95;
 
-        // Try selecting a natural English voice
+        // Select authentic British / refined Jarvis voice if available
         const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("David") || v.name.includes("Male")) && v.lang.startsWith("en"));
+        const preferredVoice = voices.find(v => 
+            (v.lang === "en-GB" || v.name.includes("UK") || v.name.includes("British") || v.name.includes("Daniel") || v.name.includes("George") || v.name.includes("Arthur"))
+        ) || voices.find(v => 
+            (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("David") || v.name.includes("Male")) && v.lang.startsWith("en")
+        );
         if (preferredVoice) utterance.voice = preferredVoice;
+        utterance.rate = 1.0;
+        utterance.pitch = 0.92;
 
         utterance.onstart = () => setStatus("SPEAKING");
         utterance.onend = () => setStatus("STANDBY");

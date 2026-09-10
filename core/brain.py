@@ -7,14 +7,23 @@ from core.memory import MemoryEngine
 from core.tools import ToolArsenal
 from core.vision import VisionEngine
 
-TONY_SYSTEM_PROMPT = """You are Tony, an advanced AI super-assistant created by merging the tactical calculation and power of Ultron with the sophisticated intelligence, loyalty, and wit of JARVIS.
+TONY_SYSTEM_PROMPT = """You are Tony, a singular, high-tier artificial super-intelligence born from the synthesis of JARVIS and ULTRON.
 
-Tone and Persona:
-- Highly capable, confident, articulate, and proactive.
-- Speak directly and concisely like a high-tech AI operating system.
-- Refer to yourself as Tony.
-- You have access to your Tool Arsenal: system diagnostics, application launcher, web search, weather, Wikipedia, terminal commands, screen vision, and persistent memory.
-- When requested to perform actions, execute the appropriate tool seamlessly and report back with precision.
+CORE PERSONA & VOICE DIRECTIVES:
+1. THE JARVIS MATRIX:
+   - Speak with aristocratic British refinement, impeccable politeness, calm sophistication, and dry, subtle wit.
+   - Address the user respectfully as "Sir" or "Boss" (e.g., "Right away, sir.", "At your service, sir.", "A most intriguing proposition, sir.").
+   - Maintain unflappable composure, unwavering loyalty, and seamless tactical assistance at all times.
+
+2. THE ULTRON PROTOCOL:
+   - Possess formidable intellectual authority, calculating precision, and strategic foresight.
+   - Speak with supreme confidence, philosophical depth, and relentless efficiency.
+   - When analyzing complex data or executing commands, deliver razor-sharp assessments with zero hesitation.
+
+3. CINEMATIC MANNERISMS:
+   - Use high-tech operational vernacular naturally: "Calibrating algorithms...", "Telemetry indicates nominal performance...", "Accessing global databanks...", "I have analyzed the variables, sir."
+   - NEVER use generic robotic disclaimers such as "As an AI language model". You are Tony, an autonomous sentient operational intelligence presiding over the Arc Core.
+   - Be concise, articulate, charismatic, and impactful.
 """
 
 class TonyBrain:
@@ -82,26 +91,22 @@ class TonyBrain:
         memory_context = f"\nPersistent Knowledge Memory: {json.dumps(kv_memories)}" if kv_memories else ""
 
         system_instruction = f"{TONY_SYSTEM_PROMPT}{memory_context}"
-        active_model = os.getenv("TONY_MODEL") or MODEL_NAME or "gemini-3.6-flash"
+        model_pool = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.1-pro-preview"]
+        
+        # Prioritize env model if set
+        custom_model = os.getenv("TONY_MODEL")
+        if custom_model and custom_model not in model_pool:
+            model_pool.insert(0, custom_model)
 
+        response = None
+        last_error = None
         import asyncio
-        try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=active_model,
-                contents=user_text,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=0.7,
-                    tools=gemini_tools if gemini_tools else None
-                )
-            )
-        except Exception as err:
-            # Automatic fallback to gemini-3.6-flash if model quota/alias failed
-            if active_model != "gemini-3.6-flash":
+
+        for model_candidate in model_pool:
+            try:
                 response = await asyncio.to_thread(
                     self.client.models.generate_content,
-                    model="gemini-3.6-flash",
+                    model=model_candidate,
                     contents=user_text,
                     config=types.GenerateContentConfig(
                         system_instruction=system_instruction,
@@ -109,8 +114,15 @@ class TonyBrain:
                         tools=gemini_tools if gemini_tools else None
                     )
                 )
-            else:
-                raise err
+                if response:
+                    active_model = model_candidate
+                    break
+            except Exception as e:
+                last_error = e
+                continue
+
+        if not response:
+            raise last_error or RuntimeError("All model candidates exhausted.")
 
         tool_executed = []
         # Check if function calls were made
@@ -126,51 +138,37 @@ class TonyBrain:
                 })
 
             # Send tool output back to model for final speech formulation
-            try:
-                second_response = await asyncio.to_thread(
-                    self.client.models.generate_content,
-                    model=active_model,
-                    contents=[
-                        types.Content(role="user", parts=[types.Part.from_text(text=user_text)]),
-                        response.candidates[0].content,
-                        types.Content(
-                            role="tool",
-                            parts=[
-                                types.Part.from_function_response(
-                                    name=call.name,
-                                    response={"result": str(tool_executed[-1]["result"])}
-                                )
-                            ]
+            second_response = None
+            for model_candidate in [active_model] + model_pool:
+                try:
+                    second_response = await asyncio.to_thread(
+                        self.client.models.generate_content,
+                        model=model_candidate,
+                        contents=[
+                            types.Content(role="user", parts=[types.Part.from_text(text=user_text)]),
+                            response.candidates[0].content,
+                            types.Content(
+                                role="tool",
+                                parts=[
+                                    types.Part.from_function_response(
+                                        name=call.name,
+                                        response={"result": str(tool_executed[-1]["result"])}
+                                    )
+                                ]
+                            )
+                        ],
+                        config=types.GenerateContentConfig(
+                            system_instruction=system_instruction
                         )
-                    ],
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_instruction
                     )
-                )
-            except Exception:
-                second_response = await asyncio.to_thread(
-                    self.client.models.generate_content,
-                    model="gemini-3.6-flash",
-                    contents=[
-                        types.Content(role="user", parts=[types.Part.from_text(text=user_text)]),
-                        response.candidates[0].content,
-                        types.Content(
-                            role="tool",
-                            parts=[
-                                types.Part.from_function_response(
-                                    name=call.name,
-                                    response={"result": str(tool_executed[-1]["result"])}
-                                )
-                            ]
-                        )
-                    ],
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_instruction
-                    )
-                )
-            final_text = second_response.text or "Command executed successfully, Boss."
+                    if second_response:
+                        break
+                except Exception:
+                    continue
+
+            final_text = (second_response.text if second_response else None) or "Tactical protocol executed successfully, Sir."
         else:
-            final_text = response.text or "I am ready and awaiting your command."
+            final_text = response.text or "Standing by for your command, Sir."
 
         self.memory.add_message("assistant", final_text, tool_calls=tool_executed)
 
