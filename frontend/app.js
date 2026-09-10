@@ -15,6 +15,13 @@ let memoryFilterCategory = "all";
 let memorySearchTerm = "";
 let cachedMemoriesList = [];
 
+// Anti-echo & debounce state guards
+let isAwaitingChatResponse = false;
+let isCurrentlySpeaking = false;
+let speechQueue = [];
+let lastTransmittedText = "";
+let lastTransmittedTime = 0;
+
 const PERSONA_CONFIGS = {
     jarvis: {
         id: "jarvis",
@@ -118,7 +125,6 @@ function switchTacticalTab(tabId) {
 
     playSciFiSound("activate");
 
-    // Refresh specific module data on tab view
     if (tabId === "memory") loadMemories();
     if (tabId === "missions") loadMissions();
     if (tabId === "security") refreshSecurityAudit();
@@ -134,7 +140,7 @@ function resolveVoiceForPersona(personaId) {
 
     const config = PERSONA_CONFIGS[personaId] || PERSONA_CONFIGS.tony;
 
-    // 1. Explicit custom user selection
+    // 1. User custom selection
     const customUri = customPersonaVoices[personaId];
     if (customUri) {
         const custom = voices.find(v => (v.voiceURI === customUri || v.name === customUri));
@@ -237,9 +243,18 @@ function testPersonaVoice(personaId) {
     const voice = resolveVoiceForPersona(personaId);
     if (voice) utterance.voice = voice;
 
-    utterance.onstart = () => setStatus("SPEAKING");
-    utterance.onend = () => setStatus("STANDBY");
-    utterance.onerror = () => setStatus("STANDBY");
+    utterance.onstart = () => {
+        isCurrentlySpeaking = true;
+        setStatus("SPEAKING");
+    };
+    utterance.onend = () => {
+        isCurrentlySpeaking = false;
+        setStatus("STANDBY");
+    };
+    utterance.onerror = () => {
+        isCurrentlySpeaking = false;
+        setStatus("STANDBY");
+    };
 
     window.speechSynthesis.speak(utterance);
 }
@@ -252,7 +267,7 @@ function resetVoicesToAuto() {
 }
 
 // --- Persona Switcher ---
-function switchPersona(personaId) {
+function switchPersona(personaId, shouldSpeakGreeting = false) {
     if (!PERSONA_CONFIGS[personaId]) return;
     currentPersona = personaId;
     const config = PERSONA_CONFIGS[personaId];
@@ -272,13 +287,13 @@ function switchPersona(personaId) {
 
     playSciFiSound("activate");
     stopSpeaking();
-    speakSentenceImmediate(config.greeting);
+
+    if (shouldSpeakGreeting) {
+        speakSentenceImmediate(config.greeting);
+    }
 }
 
-// --- Streaming TTS with Barge-In & Sentence Queue ---
-let speechQueue = [];
-let isCurrentlySpeaking = false;
-
+// --- Streaming TTS with Barge-In & Acoustic Echo Cancellation ---
 function cleanTextForSpeech(text) {
     return text
         .replace(/```[\s\S]*?```/g, "Code block provided in terminal.")
@@ -320,17 +335,32 @@ function processSpeechQueue() {
     const chosenVoice = resolveVoiceForPersona(currentPersona);
     if (chosenVoice) utterance.voice = chosenVoice;
 
-    utterance.onstart = () => setStatus("SPEAKING");
+    utterance.onstart = () => {
+        isCurrentlySpeaking = true;
+        setStatus("SPEAKING");
+    };
+
     utterance.onend = () => {
-        if (speechQueue.length > 0) processSpeechQueue();
-        else {
+        if (speechQueue.length > 0) {
+            processSpeechQueue();
+        } else {
             isCurrentlySpeaking = false;
             setStatus("STANDBY");
+            // If continuous mode is enabled, safely resume speech recognition after echo delay
+            if (continuousMode && recognition) {
+                setTimeout(() => {
+                    if (!isCurrentlySpeaking && continuousMode) {
+                        try { recognition.start(); } catch (e) {}
+                    }
+                }, 600);
+            }
         }
     };
+
     utterance.onerror = () => {
-        if (speechQueue.length > 0) processSpeechQueue();
-        else {
+        if (speechQueue.length > 0) {
+            processSpeechQueue();
+        } else {
             isCurrentlySpeaking = false;
             setStatus("STANDBY");
         }
@@ -350,7 +380,7 @@ function stopSpeaking() {
     }
     speechQueue = [];
     isCurrentlySpeaking = false;
-    setStatus("STANDBY");
+    if (currentState === "SPEAKING") setStatus("STANDBY");
 }
 
 function setSpeechRate(val) {
@@ -385,13 +415,13 @@ function toggleSfx() {
     }
 }
 
-// --- Speech Recognition & Continuous Hands-Free Mode ---
+// --- Speech Recognition with Acoustic Anti-Loop Protection ---
 function initSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
     recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    recognition.continuous = continuousMode;
     recognition.interimResults = false;
     recognition.lang = "en-US";
 
@@ -405,13 +435,47 @@ function initSpeechRecognition() {
     };
 
     recognition.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.trim();
-        if (transcript) {
-            stopSpeaking();
-            const input = document.getElementById("userInput");
-            if (input) input.value = transcript;
-            submitChatMessage(transcript);
+        // Critical: Discard recognition if AI is speaking or currently awaiting API response
+        if (isCurrentlySpeaking || isAwaitingChatResponse) {
+            console.log("[TonyAI Mic] Discarding input: AI voice active (Acoustic Echo Cancellation)");
+            return;
         }
+
+        let finalTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            }
+        }
+        finalTranscript = finalTranscript.trim();
+        if (!finalTranscript && event.results[event.results.length - 1].isFinal) {
+            finalTranscript = event.results[event.results.length - 1][0].transcript.trim();
+        }
+
+        if (!finalTranscript) return;
+
+        // Anti-Duplicate loop guard
+        const now = Date.now();
+        if (finalTranscript === lastTransmittedText && (now - lastTransmittedTime) < 2500) {
+            console.log("[TonyAI Mic] Discarding duplicate rapid speech trigger.");
+            return;
+        }
+
+        lastTransmittedText = finalTranscript;
+        lastTransmittedTime = now;
+
+        const input = document.getElementById("userInput");
+        if (input) input.value = finalTranscript;
+
+        // In standard Push-To-Talk, immediately stop recording once single speech completes
+        if (!continuousMode) {
+            try { recognition.stop(); } catch (e) {}
+            isRecording = false;
+            const micBtn = document.getElementById("micBtn");
+            if (micBtn) micBtn.classList.remove("listening");
+        }
+
+        submitChatMessage(finalTranscript);
     };
 
     recognition.onerror = () => {
@@ -419,12 +483,12 @@ function initSpeechRecognition() {
             isRecording = false;
             const micBtn = document.getElementById("micBtn");
             if (micBtn) micBtn.classList.remove("listening");
-            setStatus("STANDBY");
+            if (currentState === "LISTENING") setStatus("STANDBY");
         }
     };
 
     recognition.onend = () => {
-        if (continuousMode) {
+        if (continuousMode && !isCurrentlySpeaking) {
             try { recognition.start(); } catch (e) {}
         } else {
             isRecording = false;
@@ -442,9 +506,15 @@ function toggleVoiceInput() {
     if (!recognition) return;
 
     if (isRecording) {
-        recognition.stop();
+        try { recognition.stop(); } catch (e) {}
         isRecording = false;
+        const micBtn = document.getElementById("micBtn");
+        if (micBtn) micBtn.classList.remove("listening");
+        const micLabel = document.getElementById("micLabel");
+        if (micLabel) micLabel.innerText = "PUSH TO SPEAK";
+        setStatus("STANDBY");
     } else {
+        stopSpeaking();
         try { recognition.start(); } catch (e) {}
     }
 }
@@ -454,14 +524,23 @@ function toggleContinuousMode() {
     const btn = document.getElementById("continuousBtn");
     const label = document.getElementById("continuousLabel");
 
+    if (recognition) {
+        try { recognition.stop(); } catch (e) {}
+        recognition = null;
+    }
+
     if (continuousMode) {
         if (btn) btn.classList.add("active");
         if (label) label.innerText = "👂 CONVERSATION: ON";
-        if (!isRecording) toggleVoiceInput();
+        initSpeechRecognition();
+        try { recognition.start(); } catch (e) {}
     } else {
         if (btn) btn.classList.remove("active");
         if (label) label.innerText = "👂 CONVERSATION: OFF";
-        if (isRecording) toggleVoiceInput();
+        isRecording = false;
+        const micBtn = document.getElementById("micBtn");
+        if (micBtn) micBtn.classList.remove("listening");
+        setStatus("STANDBY");
     }
 }
 
@@ -485,8 +564,6 @@ function initWebSocket() {
 
             if (msg.type === "telemetry") {
                 updateTelemetryUI(msg.payload);
-            } else if (msg.type === "chat_response") {
-                renderAssistantMessage(msg.payload);
             } else if (msg.type === "mission_update") {
                 renderMissionProgress(msg.payload);
             }
@@ -515,12 +592,22 @@ function sendQuickPrompt(prompt) {
 }
 
 async function submitChatMessage(text) {
+    if (!text || !text.trim()) return;
+    const cleanText = text.trim();
+
+    // Debounce duplicate in-flight requests
+    if (isAwaitingChatResponse) {
+        console.log("[TonyAI] Debouncing duplicate transmission.");
+        return;
+    }
+
+    isAwaitingChatResponse = true;
     stopSpeaking();
-    renderUserMessage(text);
+    renderUserMessage(cleanText);
     setStatus("THINKING");
 
     // Check voice speed/persona voice commands
-    const lower = text.toLowerCase();
+    const lower = cleanText.toLowerCase();
     if (lower.includes("speak faster")) {
         setSpeechRate(1.35);
         document.getElementById("speedSelect").value = "1.35";
@@ -528,23 +615,25 @@ async function submitChatMessage(text) {
         setSpeechRate(1.0);
         document.getElementById("speedSelect").value = "1.0";
     } else if (lower.includes("use jarvis mode") || lower.includes("switch to jarvis")) {
-        switchPersona("jarvis");
+        switchPersona("jarvis", false);
     } else if (lower.includes("use friday mode") || lower.includes("switch to friday")) {
-        switchPersona("friday");
+        switchPersona("friday", false);
     } else if (lower.includes("tactical mode") || lower.includes("fusion mode")) {
-        switchPersona("tactical");
+        switchPersona("tactical", false);
     }
 
     try {
         const res = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt: text, persona: currentPersona })
+            body: JSON.stringify({ prompt: cleanText, persona: currentPersona })
         });
         const data = await res.json();
         renderAssistantMessage(data);
     } catch (e) {
         renderAssistantMessage({ text: `Execution error: ${e.message}` });
+    } finally {
+        isAwaitingChatResponse = false;
     }
 }
 
@@ -1100,6 +1189,6 @@ if ('speechSynthesis' in window) {
 
 window.addEventListener('DOMContentLoaded', () => {
     initWebSocket();
-    switchPersona('tony');
+    switchPersona('tony', false); // Do not auto-speak greeting on initial page load to prevent loop
     loadMemories();
 });

@@ -92,11 +92,6 @@ async def handle_chat(req: ChatRequest):
     try:
         persona = (req.persona or "tony").lower()
         result = await brain.process_user_input(req.prompt, persona=persona)
-        if result.get("text"):
-            try:
-                voice.speak(result["text"])
-            except Exception:
-                pass
         return result
     except Exception as e:
         import traceback
