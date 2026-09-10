@@ -13,7 +13,7 @@ except ImportError:
 
 # API Configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY", "")
-MODEL_NAME = os.getenv("TONY_MODEL", "gemini-3.6-flash")
+MODEL_NAME = os.getenv("TONY_MODEL", "gemini-2.5-pro")
 
 # Assistant Settings
 ASSISTANT_NAME = "Tony"
