@@ -278,7 +278,11 @@ class TonyBrain:
         elif "thank" in lower:
             response_text = "Always at your service."
         else:
-            response_text = f"Acknowledged: '{text}'. You can configure GEMINI_API_KEY in .env for full cognitive reasoning."
+            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or GEMINI_API_KEY
+            if api_key:
+                response_text = f"Acknowledged: '{text}'. Tactical systems standing by. (Note: Gemini API free tier request rate limit was reached; please wait a few seconds before transmitting your next prompt)."
+            else:
+                response_text = f"Acknowledged: '{text}'. You can configure GEMINI_API_KEY for full AI cognitive reasoning."
 
         self.memory.add_message("assistant", response_text, tool_calls=tools_run)
         return {
