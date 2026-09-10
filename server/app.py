@@ -48,11 +48,21 @@ async def get_telemetry():
 
 @app.post("/api/chat")
 async def handle_chat(req: ChatRequest):
-    result = await brain.process_user_input(req.prompt, persona=req.persona or "tony")
-    # Speak result asynchronously via voice engine
-    if result.get("text"):
-        voice.speak(result["text"])
-    return result
+    try:
+        persona = (req.persona or "tony").lower()
+        result = await brain.process_user_input(req.prompt, persona=persona)
+        # Speak result asynchronously via voice engine if local audio is available
+        if result.get("text"):
+            try:
+                voice.speak(result["text"])
+            except Exception:
+                pass
+        return result
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        fallback_res = brain._process_with_fallback_arsenal(req.prompt, persona=req.persona or "tony")
+        return fallback_res
 
 @app.websocket("/ws/stream")
 async def websocket_endpoint(websocket: WebSocket):
