@@ -1,5 +1,6 @@
 import asyncio
 import json
+from typing import Optional, Dict, Any
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -28,7 +29,7 @@ app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 
 class ChatRequest(BaseModel):
     prompt: str
-    persona: Optional[str] = "tony"
+    persona: str = "tony"
 
 @app.get("/")
 async def get_index():
