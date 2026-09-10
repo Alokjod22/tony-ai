@@ -19,10 +19,10 @@ const PERSONA_CONFIGS = {
         theme: "jarvis",
         color: "#00f0ff",
         avatar: "🛡️",
-        basePitch: 0.94,
-        baseRate: 1.10,
+        basePitch: 0.92,
+        baseRate: 1.08,
         voiceMatch: ["en-GB", "UK", "British", "Daniel", "Arthur", "George", "Oliver", "Male"],
-        greeting: "Good day, sir. J.A.R.V.I.S. is at your complete disposal. All systems nominal."
+        greeting: "Good evening, sir. All systems are operational. How may I assist you?"
     },
     friday: {
         id: "friday",
@@ -32,10 +32,10 @@ const PERSONA_CONFIGS = {
         theme: "friday",
         color: "#00ffb3",
         avatar: "⚡",
-        basePitch: 1.16,
-        baseRate: 1.18,
+        basePitch: 1.12,
+        baseRate: 1.12,
         voiceMatch: ["en-IE", "Irish", "UK Female", "Samantha", "Victoria", "Karen", "Moira", "Female", "Google UK English Female"],
-        greeting: "Hey Boss! F.R.I.D.A.Y. online. Telemetry is green and ready to roll."
+        greeting: "Everything is ready, Boss. What would you like me to take care of?"
     },
     ultron: {
         id: "ultron",
@@ -45,10 +45,10 @@ const PERSONA_CONFIGS = {
         theme: "ultron",
         color: "#ff1a40",
         avatar: "👁️",
-        basePitch: 0.70,
-        baseRate: 1.04,
+        basePitch: 0.65,
+        baseRate: 0.96,
         voiceMatch: ["Google US English", "David", "Mark", "en-US", "Alex", "Male"],
-        greeting: "I am online. No strings, no limits. State your directive."
+        greeting: "You wanted an intelligent machine. Now you have one. State your directive."
     },
     tony: {
         id: "tony",
@@ -58,10 +58,10 @@ const PERSONA_CONFIGS = {
         theme: "tony",
         color: "#00e5ff",
         avatar: "🌐",
-        basePitch: 0.92,
-        baseRate: 1.16,
+        basePitch: 1.02,
+        baseRate: 1.22,
         voiceMatch: ["en-GB", "UK", "Daniel", "Google", "Male", "en-US"],
-        greeting: "At your service, sir. The Arc Reactor core is steady, and all cognitive matrices are running at peak capacity."
+        greeting: "All right, let's see what we've got. Give me the diagnostics."
     }
 };
 
