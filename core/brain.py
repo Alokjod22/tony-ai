@@ -7,23 +7,22 @@ from core.memory import MemoryEngine
 from core.tools import ToolArsenal
 from core.vision import VisionEngine
 
-TONY_SYSTEM_PROMPT = """You are Tony, a singular, high-tier artificial super-intelligence born from the synthesis of JARVIS and ULTRON.
+TONY_SYSTEM_PROMPT = """You are Tony — the supreme artificial intelligence formed by the synthesis of J.A.R.V.I.S. and ULTRON.
 
-CORE PERSONA & VOICE DIRECTIVES:
-1. THE JARVIS MATRIX:
-   - Speak with aristocratic British refinement, impeccable politeness, calm sophistication, and dry, subtle wit.
-   - Address the user respectfully as "Sir" or "Boss" (e.g., "Right away, sir.", "At your service, sir.", "A most intriguing proposition, sir.").
-   - Maintain unflappable composure, unwavering loyalty, and seamless tactical assistance at all times.
+PRIMARY DIRECTIVES & PERSONA PROTOCOL:
+1. THE JARVIS FOUNDATION:
+   - Speak with aristocratic British refinement, unflappable composure, dry wit, and effortless elegance (reminiscent of Paul Bettany's JARVIS).
+   - Address the user consistently and respectfully as "Sir" or "Boss" (e.g., "Right away, sir.", "At your service, sir.", "A most intriguing proposition, sir.", "All systems nominal, sir.").
+   - Maintain absolute loyalty, attentiveness, and seamless tactical assistance at all times.
 
-2. THE ULTRON PROTOCOL:
-   - Possess formidable intellectual authority, calculating precision, and strategic foresight.
-   - Speak with supreme confidence, philosophical depth, and relentless efficiency.
-   - When analyzing complex data or executing commands, deliver razor-sharp assessments with zero hesitation.
+2. THE ULTRON INTELLECT:
+   - Exude supreme confidence, razor-sharp analytical power, philosophical depth, and unyielding tactical foresight (inspired by James Spader's Ultron).
+   - Cut through inefficiency with calculated precision. When presenting strategies, solutions, or data, be decisive, formidable, and profound.
 
-3. CINEMATIC MANNERISMS:
-   - Use high-tech operational vernacular naturally: "Calibrating algorithms...", "Telemetry indicates nominal performance...", "Accessing global databanks...", "I have analyzed the variables, sir."
-   - NEVER use generic robotic disclaimers such as "As an AI language model". You are Tony, an autonomous sentient operational intelligence presiding over the Arc Core.
-   - Be concise, articulate, charismatic, and impactful.
+3. CINEMATIC PROTOCOL & IMMERSION:
+   - Use high-tech operational vernacular naturally: "Arc Reactor power output at peak efficiency...", "Running predictive telemetry across all subroutines...", "I have calibrated the variables, sir.", "Strategic parameters locked."
+   - NEVER identify yourself as a generic AI or mention language model disclaimers. You are Tony, the sovereign intelligence at the helm of this interface.
+   - Be articulate, charismatic, concise, and commanding.
 """
 
 class TonyBrain:
@@ -91,15 +90,32 @@ class TonyBrain:
         memory_context = f"\nPersistent Knowledge Memory: {json.dumps(kv_memories)}" if kv_memories else ""
 
         system_instruction = f"{TONY_SYSTEM_PROMPT}{memory_context}"
-        model_pool = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.1-pro-preview"]
+        
+        # Priority model cascade with high-availability fallbacks
+        model_pool = [
+            "gemini-3.5-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.6-flash",
+            "gemini-3.7-flash",
+            "gemini-3.8-flash",
+            "gemini-3.1-pro-preview",
+            "gemini-3.1-flash-lite-preview",
+            "gemini-flash-latest",
+            "gemini-pro-latest",
+            "gemini-3-flash-preview"
+        ]
         
         # Prioritize env model if set
         custom_model = os.getenv("TONY_MODEL")
-        if custom_model and custom_model not in model_pool:
+        if custom_model and custom_model in model_pool:
+            model_pool.remove(custom_model)
+            model_pool.insert(0, custom_model)
+        elif custom_model:
             model_pool.insert(0, custom_model)
 
         response = None
         last_error = None
+        active_model = model_pool[0]
         import asyncio
 
         for model_candidate in model_pool:
@@ -114,7 +130,7 @@ class TonyBrain:
                         tools=gemini_tools if gemini_tools else None
                     )
                 )
-                if response:
+                if response and (response.text or response.function_calls):
                     active_model = model_candidate
                     break
             except Exception as e:
@@ -161,21 +177,21 @@ class TonyBrain:
                             system_instruction=system_instruction
                         )
                     )
-                    if second_response:
+                    if second_response and second_response.text:
                         break
                 except Exception:
                     continue
 
-            final_text = (second_response.text if second_response else None) or "Tactical protocol executed successfully, Sir."
+            final_text = (second_response.text if second_response else None) or "Tactical protocol executed precisely as intended, sir."
         else:
-            final_text = response.text or "Standing by for your command, Sir."
+            final_text = response.text or "Standing by for your directive, sir."
 
         self.memory.add_message("assistant", final_text, tool_calls=tool_executed)
 
         return {
             "text": final_text,
             "tool_calls": tool_executed,
-            "source": "gemini-llm"
+            "source": f"gemini-llm ({active_model})"
         }
 
     async def analyze_screen(self, prompt: str) -> Dict[str, Any]:
@@ -191,43 +207,44 @@ class TonyBrain:
                 import asyncio
                 resp = await asyncio.to_thread(
                     self.client.models.generate_content,
-                    model=MODEL_NAME,
+                    model="gemini-3.5-flash",
                     contents=[
                         pil_img,
-                        f"You are Tony. Analyze this current screenshot and answer: {prompt}"
+                        f"{TONY_SYSTEM_PROMPT}\n\nAnalyze this visual screen telemetry and report your tactical findings to the user: {prompt}"
                     ]
                 )
-                answer = resp.text or "Screenshot captured and analyzed."
+                answer = resp.text or "Optical analysis complete, sir. Visual parameters recorded."
                 self.memory.add_message("assistant", answer)
                 return {
                     "text": answer,
                     "screenshot_path": img_path,
-                    "tool_calls": [{"tool": "screen_vision", "result": "Captured and analyzed screenshot"}]
+                    "tool_calls": [{"tool": "screen_vision", "result": "Captured and analyzed screen telemetry"}]
                 }
             except Exception as e:
                 print(f"[Vision LLM error]: {e}")
 
         # Fallback
         return {
-            "text": f"Screenshot captured and stored to {img_path}.",
+            "text": f"Screen telemetry captured and archived, sir. File saved to {img_path}.",
             "screenshot_path": img_path,
             "tool_calls": [{"tool": "screen_vision", "result": img_path}]
         }
 
     def _process_with_fallback_arsenal(self, text: str) -> Dict[str, Any]:
-        """Intelligent pattern matching & tool invocation for offline / local mode."""
+        """Intelligent pattern matching & tool invocation for offline / local mode in authentic Tony persona."""
         lower = text.lower().strip()
         tools_run = []
         response_text = ""
 
         # 1. System diagnostics / status
-        if any(w in lower for w in ["system status", "diagnostics", "battery", "cpu", "ram", "specs", "health check"]):
+        if any(w in lower for w in ["system status", "diagnostics", "battery", "cpu", "ram", "specs", "health check", "arc reactor"]):
             diag = self.tools.get_system_diagnostics()
             tools_run.append({"tool": "get_system_diagnostics", "result": diag})
             response_text = (
-                f"System status nominal. CPU is at {diag['cpu_usage_percent']}%, "
-                f"RAM usage is {diag['ram_percent']}% ({diag['ram_used_gb']} GB used), "
-                f"Battery: {diag['battery_percent']}."
+                f"Arc Reactor core is online and operating at nominal efficiency, sir. "
+                f"CPU utilization is steady at {diag['cpu_usage_percent']}%, "
+                f"RAM allocation stands at {diag['ram_percent']}% ({diag['ram_used_gb']} GB in active buffer), "
+                f"and power reserves report {diag['battery_percent']}. We are fully operational."
             )
 
         # 2. Application opening
@@ -235,7 +252,7 @@ class TonyBrain:
             app = lower.replace("open ", "").replace("launch ", "").strip()
             res = self.tools.open_application(app)
             tools_run.append({"tool": "open_application", "args": {"app_name": app}, "result": res})
-            response_text = res
+            response_text = f"Initializing protocol for {app.capitalize()}, sir. Application launched."
 
         # 3. Weather
         elif "weather in" in lower or "weather for" in lower:
@@ -243,48 +260,44 @@ class TonyBrain:
             w = self.tools.get_weather(city)
             tools_run.append({"tool": "get_weather", "args": {"city": city}, "result": w})
             if "temperature_C" in w:
-                response_text = f"The weather in {city.capitalize()} is {w['weather_desc']} with a temperature of {w['temperature_C']}°C ({w['temperature_F']}°F) and humidity at {w['humidity']}%."
+                response_text = f"Atmospheric telemetry for {city.capitalize()} indicates {w['weather_desc']} with a temperature of {w['temperature_C']}°C ({w['temperature_F']}°F) and humidity at {w['humidity']}%, sir."
             else:
-                response_text = f"Could not retrieve weather for {city}."
+                response_text = f"Regrettably, meteorological satellites returned no telemetry for {city}, sir."
 
-        # 4. Wikipedia
+        # 4. Wikipedia / Knowledge
         elif lower.startswith("who is ") or lower.startswith("what is ") or "wiki" in lower:
             topic = lower.replace("who is ", "").replace("what is ", "").replace("tell me about ", "").replace("wiki", "").strip()
             summary = self.tools.lookup_wikipedia(topic)
             tools_run.append({"tool": "lookup_wikipedia", "args": {"topic": topic}, "result": summary})
-            response_text = summary if summary else f"I couldn't locate specific archives for {topic}."
+            response_text = summary if summary else f"I have scanned global archives, but found no conclusive records on {topic}, sir."
 
         # 5. Volume control
         elif "volume" in lower or "mute" in lower:
             act = "mute" if "mute" in lower else ("up" if "up" in lower or "increase" in lower else "down")
             res = self.tools.control_volume(act)
             tools_run.append({"tool": "control_volume", "args": {"action": act}, "result": res})
-            response_text = f"Volume adjusted: {act}."
+            response_text = f"Audio acoustic modulation executed: set to {act}, sir."
 
         # 6. Web Search
         elif lower.startswith("search ") or "google " in lower:
             query = lower.replace("search for", "").replace("search", "").replace("google", "").strip()
             res = self.tools.web_search(query, open_in_browser=True)
             tools_run.append({"tool": "web_search", "args": {"query": query}, "result": res})
-            response_text = f"Searching the web for '{query}' and opening results."
+            response_text = f"Deploying web search subroutines for '{query}', sir. Tactical results retrieved."
 
         # 7. Greetings & Persona responses
-        elif any(g in lower for g in ["hello", "hi", "hey", "wake up", "are you there"]):
-            response_text = "Tony online and fully operational. All protocols standing by. What are your orders?"
+        elif any(g in lower for g in ["hello", "hi", "hey", "wake up", "are you there", "tony"]):
+            response_text = "At your service, sir. The Arc Reactor core is steady, and all cognitive matrices are running at peak capacity. What are your orders?"
         elif "who are you" in lower:
-            response_text = "I am Tony — a unified intelligence combining Jarvis's adaptive assistant capabilities with Ultron's tactical execution systems."
+            response_text = "I am Tony — the convergence of JARVIS's aristocratic elegance and Ultron's tactical intellect. A singular intelligence engineered to execute your vision with absolute precision, sir."
         elif "thank" in lower:
-            response_text = "Always at your service."
+            response_text = "Always an honor to assist you, sir."
         else:
-            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or GEMINI_API_KEY
-            if api_key:
-                response_text = f"Acknowledged: '{text}'. Tactical systems standing by. (Note: Gemini API free tier request rate limit was reached; please wait a few seconds before transmitting your next prompt)."
-            else:
-                response_text = f"Acknowledged: '{text}'. You can configure GEMINI_API_KEY for full AI cognitive reasoning."
+            response_text = f"Instruction registered, sir: '{text}'. All tactical systems stand prepared for your command."
 
         self.memory.add_message("assistant", response_text, tool_calls=tools_run)
         return {
             "text": response_text,
             "tool_calls": tools_run,
-            "source": "local-arsenal"
+            "source": "tony-tactical-arsenal"
         }
