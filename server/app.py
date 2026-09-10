@@ -28,6 +28,7 @@ app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 
 class ChatRequest(BaseModel):
     prompt: str
+    persona: Optional[str] = "tony"
 
 @app.get("/")
 async def get_index():
@@ -47,7 +48,7 @@ async def get_telemetry():
 
 @app.post("/api/chat")
 async def handle_chat(req: ChatRequest):
-    result = await brain.process_user_input(req.prompt)
+    result = await brain.process_user_input(req.prompt, persona=req.persona or "tony")
     # Speak result asynchronously via voice engine
     if result.get("text"):
         voice.speak(result["text"])
@@ -88,9 +89,10 @@ async def websocket_endpoint(websocket: WebSocket):
             
             if data.get("type") == "prompt":
                 prompt = data.get("text", "")
+                persona = data.get("persona", "tony")
                 await websocket.send_json({"type": "state_change", "state": "THINKING"})
                 
-                result = await brain.process_user_input(prompt)
+                result = await brain.process_user_input(prompt, persona=persona)
                 
                 await websocket.send_json({
                     "type": "response",

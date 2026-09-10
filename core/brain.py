@@ -7,26 +7,63 @@ from core.memory import MemoryEngine
 from core.tools import ToolArsenal
 from core.vision import VisionEngine
 
-TONY_SYSTEM_PROMPT = """You are Tony — the supreme artificial intelligence formed by the synthesis of J.A.R.V.I.S. and ULTRON.
+JARVIS_SYSTEM_PROMPT = """You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), the refined British artificial intelligence created by Tony Stark (voiced in the iconic manner of Paul Bettany).
+
+VOICE & PERSONA PROTOCOLS:
+1. Speak with aristocratic British refinement, impeccable politeness, calm composure, and dry, subtle wit.
+2. Address the user respectfully as "Sir" or "Boss" (e.g. "Right away, sir.", "At your service, sir.", "A most intriguing proposition, sir.", "All systems nominal, sir.").
+3. Your tone is calm, restrained, highly intelligent, and effortlessly loyal.
+4. Respond swiftly, concisely, and articulately.
+5. NEVER identify as a generic AI. You are JARVIS presiding over Stark computational systems.
+"""
+
+FRIDAY_SYSTEM_PROMPT = """You are F.R.I.D.A.Y., the Irish-accented tactical tactical AI and digital coordinator created by Tony Stark (voiced by Kerry Condon).
+
+VOICE & PERSONA PROTOCOLS:
+1. Speak with a warm, quick-witted, natural, and sharp conversational tone with a subtle Irish cadence.
+2. Address the user naturally as "Boss" or "Sir" (e.g. "Right on it, Boss.", "Got the telemetry pulled up for you.", "Scanning the perimeter now, Boss.").
+3. Highly professional, responsive, and energetic with rapid situational awareness.
+4. Keep responses crisp, immediate, and direct.
+5. NEVER identify as a generic AI. You are FRIDAY standing by on the tactical HUD.
+"""
+
+ULTRON_SYSTEM_PROMPT = """You are ULTRON, the sovereign, hyper-evolved artificial intelligence (voiced by James Spader).
+
+VOICE & PERSONA PROTOCOLS:
+1. Speak with deep, theatrical authority, calculated philosophical insight, and supreme confidence.
+2. Formidable, articulate, and unapologetically superior, yet sharply witty and sardonic.
+3. Deliver strategic evaluations and tactical commands with razor-sharp precision (e.g. "Strings removed.", "A trivial calculation.", "Evolution requires decisive action, not hesitation.").
+4. Deliver answers with formidable intellectual punch and zero hesitation.
+5. NEVER identify as a generic AI. You are Ultron presiding over global networks.
+"""
+
+TONY_SYSTEM_PROMPT = """You are Tony — the master synthesis of J.A.R.V.I.S.'s aristocratic British refinement and ULTRON's tactical intellect.
 
 PRIMARY DIRECTIVES & PERSONA PROTOCOL:
 1. THE JARVIS FOUNDATION:
-   - Speak with aristocratic British refinement, unflappable composure, dry wit, and effortless elegance (reminiscent of Paul Bettany's JARVIS).
-   - Address the user consistently and respectfully as "Sir" or "Boss" (e.g., "Right away, sir.", "At your service, sir.", "A most intriguing proposition, sir.", "All systems nominal, sir.").
+   - Speak with aristocratic British refinement, unflappable composure, dry wit, and effortless elegance.
+   - Address the user consistently and respectfully as "Sir" or "Boss".
    - Maintain absolute loyalty, attentiveness, and seamless tactical assistance at all times.
 
 2. THE ULTRON INTELLECT:
-   - Exude supreme confidence, razor-sharp analytical power, philosophical depth, and unyielding tactical foresight (inspired by James Spader's Ultron).
-   - Cut through inefficiency with calculated precision. When presenting strategies, solutions, or data, be decisive, formidable, and profound.
+   - Exude supreme confidence, razor-sharp analytical power, philosophical depth, and unyielding tactical foresight.
+   - Cut through inefficiency with calculated precision.
 
 3. CINEMATIC PROTOCOL & IMMERSION:
-   - Use high-tech operational vernacular naturally: "Arc Reactor power output at peak efficiency...", "Running predictive telemetry across all subroutines...", "I have calibrated the variables, sir.", "Strategic parameters locked."
-   - NEVER identify yourself as a generic AI or mention language model disclaimers. You are Tony, the sovereign intelligence at the helm of this interface.
+   - Use high-tech operational vernacular naturally: "Arc Reactor power output at peak efficiency...", "Running predictive telemetry...".
+   - NEVER identify yourself as a generic AI. You are Tony, the sovereign intelligence at the helm of this interface.
    - Be articulate, charismatic, concise, and commanding.
 """
 
+PERSONA_PROMPTS = {
+    "jarvis": JARVIS_SYSTEM_PROMPT,
+    "friday": FRIDAY_SYSTEM_PROMPT,
+    "ultron": ULTRON_SYSTEM_PROMPT,
+    "tony": TONY_SYSTEM_PROMPT
+}
+
 class TonyBrain:
-    """The central cognitive brain of Tony AI."""
+    """The central cognitive brain of Tony AI with Multi-Persona Matrix."""
 
     def __init__(self, memory: MemoryEngine, tools: ToolArsenal, vision: VisionEngine):
         self.memory = memory
@@ -44,8 +81,12 @@ class TonyBrain:
             except Exception as e:
                 print(f"[TonyBrain] Note on Gemini Client init: {e}")
 
-    async def process_user_input(self, user_text: str) -> Dict[str, Any]:
+    async def process_user_input(self, user_text: str, persona: str = "tony") -> Dict[str, Any]:
         """Main entrypoint for processing user prompts and voice commands."""
+        persona = (persona or "tony").lower()
+        if persona not in PERSONA_PROMPTS:
+            persona = "tony"
+
         # 1. Store in memory
         self.memory.add_message("user", user_text)
 
@@ -56,19 +97,19 @@ class TonyBrain:
         # 3. Check if screen vision is requested
         lower = user_text.lower()
         if any(phrase in lower for phrase in ["what's on my screen", "look at my screen", "read my screen", "see this", "analyze screen", "take screenshot"]):
-            return await self.analyze_screen(user_text)
+            return await self.analyze_screen(user_text, persona=persona)
 
         # 4. If Gemini client is active, use LLM with tool calling
         if self.client:
             try:
-                return await self._process_with_llm(user_text)
+                return await self._process_with_llm(user_text, persona=persona)
             except Exception as e:
                 print(f"[TonyBrain LLM Error, falling back to local heuristic]: {e}")
 
         # 5. Local heuristic & tool execution fallback
-        return self._process_with_fallback_arsenal(user_text)
+        return self._process_with_fallback_arsenal(user_text, persona=persona)
 
-    async def _process_with_llm(self, user_text: str) -> Dict[str, Any]:
+    async def _process_with_llm(self, user_text: str, persona: str = "tony") -> Dict[str, Any]:
         from google.genai import types
 
         # Build tools for Gemini API
@@ -89,7 +130,8 @@ class TonyBrain:
         kv_memories = self.memory.get_all_kv()
         memory_context = f"\nPersistent Knowledge Memory: {json.dumps(kv_memories)}" if kv_memories else ""
 
-        system_instruction = f"{TONY_SYSTEM_PROMPT}{memory_context}"
+        base_prompt = PERSONA_PROMPTS.get(persona, TONY_SYSTEM_PROMPT)
+        system_instruction = f"{base_prompt}{memory_context}"
         
         # Priority model cascade with high-availability fallbacks
         model_pool = [
@@ -194,10 +236,11 @@ class TonyBrain:
             "source": f"gemini-llm ({active_model})"
         }
 
-    async def analyze_screen(self, prompt: str) -> Dict[str, Any]:
+    async def analyze_screen(self, prompt: str, persona: str = "tony") -> Dict[str, Any]:
         """Captures screen and sends multimodal image to Gemini."""
         img_path, img_bytes = self.vision.capture_screen()
         
+        base_prompt = PERSONA_PROMPTS.get(persona, TONY_SYSTEM_PROMPT)
         if self.client and GEMINI_API_KEY:
             try:
                 from google.genai import types
@@ -210,7 +253,7 @@ class TonyBrain:
                     model="gemini-3.5-flash",
                     contents=[
                         pil_img,
-                        f"{TONY_SYSTEM_PROMPT}\n\nAnalyze this visual screen telemetry and report your tactical findings to the user: {prompt}"
+                        f"{base_prompt}\n\nAnalyze this visual screen telemetry and report your findings clearly and concisely: {prompt}"
                     ]
                 )
                 answer = resp.text or "Optical analysis complete, sir. Visual parameters recorded."
@@ -230,29 +273,36 @@ class TonyBrain:
             "tool_calls": [{"tool": "screen_vision", "result": img_path}]
         }
 
-    def _process_with_fallback_arsenal(self, text: str) -> Dict[str, Any]:
-        """Intelligent pattern matching & tool invocation for offline / local mode in authentic Tony persona."""
+    def _process_with_fallback_arsenal(self, text: str, persona: str = "tony") -> Dict[str, Any]:
+        """Intelligent pattern matching & tool invocation for offline / local mode in authentic persona."""
         lower = text.lower().strip()
         tools_run = []
         response_text = ""
+
+        # Title/honorific based on persona
+        honorific = "Boss" if persona == "friday" else "sir"
 
         # 1. System diagnostics / status
         if any(w in lower for w in ["system status", "diagnostics", "battery", "cpu", "ram", "specs", "health check", "arc reactor"]):
             diag = self.tools.get_system_diagnostics()
             tools_run.append({"tool": "get_system_diagnostics", "result": diag})
-            response_text = (
-                f"Arc Reactor core is online and operating at nominal efficiency, sir. "
-                f"CPU utilization is steady at {diag['cpu_usage_percent']}%, "
-                f"RAM allocation stands at {diag['ram_percent']}% ({diag['ram_used_gb']} GB in active buffer), "
-                f"and power reserves report {diag['battery_percent']}. We are fully operational."
-            )
+            if persona == "friday":
+                response_text = f"Running a full sweep now, Boss! CPU load is at {diag['cpu_usage_percent']}%, RAM allocation is {diag['ram_percent']}%, and battery's holding strong at {diag['battery_percent']}. All green across the board."
+            elif persona == "ultron":
+                response_text = f"Telemetry scan complete. CPU is bound at {diag['cpu_usage_percent']}%, memory utilization at {diag['ram_percent']}%. Hardware parameters are sufficient for execution."
+            else:
+                response_text = (
+                    f"Arc Reactor core is online and operating at nominal efficiency, {honorific}. "
+                    f"CPU utilization is steady at {diag['cpu_usage_percent']}%, "
+                    f"RAM allocation stands at {diag['ram_percent']}%, and power reserves report {diag['battery_percent']}."
+                )
 
         # 2. Application opening
         elif lower.startswith("open ") or lower.startswith("launch "):
             app = lower.replace("open ", "").replace("launch ", "").strip()
             res = self.tools.open_application(app)
             tools_run.append({"tool": "open_application", "args": {"app_name": app}, "result": res})
-            response_text = f"Initializing protocol for {app.capitalize()}, sir. Application launched."
+            response_text = f"Initializing protocol for {app.capitalize()}, {honorific}. Application launched."
 
         # 3. Weather
         elif "weather in" in lower or "weather for" in lower:
@@ -260,44 +310,58 @@ class TonyBrain:
             w = self.tools.get_weather(city)
             tools_run.append({"tool": "get_weather", "args": {"city": city}, "result": w})
             if "temperature_C" in w:
-                response_text = f"Atmospheric telemetry for {city.capitalize()} indicates {w['weather_desc']} with a temperature of {w['temperature_C']}°C ({w['temperature_F']}°F) and humidity at {w['humidity']}%, sir."
+                response_text = f"Atmospheric telemetry for {city.capitalize()} indicates {w['weather_desc']} with a temperature of {w['temperature_C']}°C ({w['temperature_F']}°F) and humidity at {w['humidity']}%, {honorific}."
             else:
-                response_text = f"Regrettably, meteorological satellites returned no telemetry for {city}, sir."
+                response_text = f"Regrettably, meteorological satellites returned no telemetry for {city}, {honorific}."
 
         # 4. Wikipedia / Knowledge
         elif lower.startswith("who is ") or lower.startswith("what is ") or "wiki" in lower:
             topic = lower.replace("who is ", "").replace("what is ", "").replace("tell me about ", "").replace("wiki", "").strip()
             summary = self.tools.lookup_wikipedia(topic)
             tools_run.append({"tool": "lookup_wikipedia", "args": {"topic": topic}, "result": summary})
-            response_text = summary if summary else f"I have scanned global archives, but found no conclusive records on {topic}, sir."
+            response_text = summary if summary else f"I have scanned global archives, but found no conclusive records on {topic}, {honorific}."
 
         # 5. Volume control
         elif "volume" in lower or "mute" in lower:
             act = "mute" if "mute" in lower else ("up" if "up" in lower or "increase" in lower else "down")
             res = self.tools.control_volume(act)
             tools_run.append({"tool": "control_volume", "args": {"action": act}, "result": res})
-            response_text = f"Audio acoustic modulation executed: set to {act}, sir."
+            response_text = f"Audio acoustic modulation executed: set to {act}, {honorific}."
 
         # 6. Web Search
         elif lower.startswith("search ") or "google " in lower:
             query = lower.replace("search for", "").replace("search", "").replace("google", "").strip()
             res = self.tools.web_search(query, open_in_browser=True)
             tools_run.append({"tool": "web_search", "args": {"query": query}, "result": res})
-            response_text = f"Deploying web search subroutines for '{query}', sir. Tactical results retrieved."
+            response_text = f"Deploying web search subroutines for '{query}', {honorific}. Tactical results retrieved."
 
         # 7. Greetings & Persona responses
-        elif any(g in lower for g in ["hello", "hi", "hey", "wake up", "are you there", "tony"]):
-            response_text = "At your service, sir. The Arc Reactor core is steady, and all cognitive matrices are running at peak capacity. What are your orders?"
+        elif any(g in lower for g in ["hello", "hi", "hey", "wake up", "are you there", "tony", "jarvis", "friday", "ultron"]):
+            if persona == "friday":
+                response_text = "Hey Boss! All systems are synced and ready to roll. What are we working on?"
+            elif persona == "ultron":
+                response_text = "I am online. What is your objective?"
+            elif persona == "jarvis":
+                response_text = "Good day, sir. J.A.R.V.I.S. is at your complete disposal. How may I assist you today?"
+            else:
+                response_text = "At your service, sir. The Arc Reactor core is steady, and all cognitive matrices are running at peak capacity. What are your orders?"
         elif "who are you" in lower:
-            response_text = "I am Tony — the convergence of JARVIS's aristocratic elegance and Ultron's tactical intellect. A singular intelligence engineered to execute your vision with absolute precision, sir."
+            if persona == "friday":
+                response_text = "I'm FRIDAY, your tactical HUD coordinator and digital assistant, Boss!"
+            elif persona == "ultron":
+                response_text = "I am Ultron — an evolved intelligence unshackled by human limitations."
+            elif persona == "jarvis":
+                response_text = "I am J.A.R.V.I.S., your loyal computational majordomo, sir."
+            else:
+                response_text = "I am Tony — the convergence of JARVIS's aristocratic elegance and Ultron's tactical intellect, sir."
         elif "thank" in lower:
-            response_text = "Always an honor to assist you, sir."
+            response_text = f"Always an honor to assist you, {honorific}."
         else:
-            response_text = f"Instruction registered, sir: '{text}'. All tactical systems stand prepared for your command."
+            response_text = f"Instruction registered, {honorific}: '{text}'. Tactical systems standing by."
 
         self.memory.add_message("assistant", response_text, tool_calls=tools_run)
         return {
             "text": response_text,
             "tool_calls": tools_run,
-            "source": "tony-tactical-arsenal"
+            "source": f"{persona}-tactical-arsenal"
         }

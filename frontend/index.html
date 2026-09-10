@@ -3,97 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TONY AI // Cyber Tactical Interface</title>
+    <title>TONY AI // Codex Tactical & Persona Matrix</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
-<body>
+<body data-theme="tony">
     <div class="hud-overlay">
-        <!-- Top Status Bar -->
+        <!-- Top Navigation & Persona Matrix Bar -->
         <header class="top-bar">
-            <div class="brand">
-                <div class="status-indicator live"></div>
-                <span class="logo-text">TONY <span class="sub-text">AI SYSTEM v2.5</span></span>
+            <div class="brand-section">
+                <div class="status-indicator live" id="liveIndicator"></div>
+                <div class="brand-titles">
+                    <span class="logo-text">TONY <span class="version-tag">CODEX v3.0</span></span>
+                    <span class="sub-text">TACTICAL SUPER-INTELLIGENCE MATRIX</span>
+                </div>
             </div>
-            <div class="system-time" id="clock">00:00:00</div>
-            <div class="protocols">
-                <span class="badge">JARVIS.CORE: ACTIVE</span>
-                <span class="badge">ULTRON.TACTICAL: ONLINE</span>
+
+            <!-- Persona Switcher Selector -->
+            <div class="persona-selector">
+                <button class="persona-btn" data-persona="jarvis" onclick="switchPersona('jarvis')">
+                    <span class="p-icon">🛡️</span>
+                    <span class="p-name">J.A.R.V.I.S.</span>
+                    <span class="p-badge">BRITISH</span>
+                </button>
+                <button class="persona-btn" data-persona="friday" onclick="switchPersona('friday')">
+                    <span class="p-icon">⚡</span>
+                    <span class="p-name">F.R.I.D.A.Y.</span>
+                    <span class="p-badge">IRISH</span>
+                </button>
+                <button class="persona-btn" data-persona="ultron" onclick="switchPersona('ultron')">
+                    <span class="p-icon">👁️</span>
+                    <span class="p-name">U.L.T.R.O.N.</span>
+                    <span class="p-badge">TACTICAL</span>
+                </button>
+                <button class="persona-btn active" data-persona="tony" onclick="switchPersona('tony')">
+                    <span class="p-icon">🌐</span>
+                    <span class="p-name">T.O.N.Y.</span>
+                    <span class="p-badge">ARC CORE</span>
+                </button>
+            </div>
+
+            <!-- Header Controls: Voice Speed, SFX, Clock -->
+            <div class="header-controls">
+                <div class="control-group">
+                    <span class="ctrl-label">SPEED:</span>
+                    <select id="speedSelect" onchange="setSpeechRate(this.value)">
+                        <option value="1.0">1.0x (Normal)</option>
+                        <option value="1.2" selected>1.2x (Fast)</option>
+                        <option value="1.35">1.35x (Rapid)</option>
+                        <option value="1.5">1.5x (Hyper)</option>
+                    </select>
+                </div>
+                <button class="icon-toggle-btn" id="voiceToggleBtn" onclick="toggleVoiceOutput()" title="Toggle Voice Speech">
+                    <span id="voiceIcon">🔊</span>
+                </button>
+                <div class="system-time" id="clock">00:00:00</div>
             </div>
         </header>
 
-        <!-- Main HUD Layout -->
-        <main class="hud-grid">
-            <!-- Left Panel: Telemetry & Hardware -->
-            <section class="panel panel-left">
-                <div class="panel-header">
-                    <h3>SYSTEM TELEMETRY</h3>
-                    <span class="panel-tag">SYS.DIAG</span>
-                </div>
-                <div class="telemetry-item">
-                    <div class="tele-label"><span>CPU LOAD</span><span id="cpu-val">0%</span></div>
-                    <div class="progress-bar"><div class="fill" id="cpu-fill" style="width: 0%"></div></div>
-                </div>
-                <div class="telemetry-item">
-                    <div class="tele-label"><span>MEMORY ALLOCATION</span><span id="ram-val">0%</span></div>
-                    <div class="progress-bar"><div class="fill" id="ram-fill" style="width: 0%"></div></div>
-                </div>
-                <div class="telemetry-item">
-                    <div class="tele-label"><span>POWER / BATTERY</span><span id="battery-val">100%</span></div>
-                    <div class="progress-bar"><div class="fill green" id="battery-fill" style="width: 100%"></div></div>
-                </div>
-                <div class="telemetry-item">
-                    <div class="tele-label"><span>SYSTEM OS</span><span id="os-val">WINDOWS</span></div>
-                </div>
-
-                <!-- Quick Action Arsenal -->
-                <div class="panel-header" style="margin-top: 25px;">
-                    <h3>ARSENAL PROTOCOLS</h3>
-                    <span class="panel-tag">EXEC</span>
-                </div>
-                <div class="action-grid">
-                    <button class="action-btn" onclick="triggerAction('diagnostics')">⚡ SYSTEM SCAN</button>
-                    <button class="action-btn" onclick="triggerAction('screen')">👁️ SCREEN VISION</button>
-                    <button class="action-btn" onclick="triggerAction('calc')">🧮 CALCULATOR</button>
-                    <button class="action-btn" onclick="triggerAction('notes')">📝 NOTEPAD</button>
-                    <button class="action-btn" onclick="triggerAction('weather')">🌤️ WEATHER</button>
-                    <button class="action-btn" onclick="triggerAction('volume_up')">🔊 VOL UP</button>
-                </div>
-            </section>
-
-            <!-- Center Panel: Arc Reactor Core Visualizer -->
-            <section class="panel-center">
-                <div class="core-container">
-                    <canvas id="arcCanvas" width="380" height="380"></canvas>
-                    <div class="core-status" id="coreStatus">STANDBY</div>
-                </div>
-
-                <!-- Voice Trigger Controls -->
-                <div class="voice-controls">
-                    <button id="micBtn" class="mic-button" onclick="toggleVoiceInput()">
-                        <div class="mic-icon">🎙️</div>
-                        <span id="micLabel">PUSH TO ENGAGE VOICE</span>
-                    </button>
-                </div>
-            </section>
-
-            <!-- Right Panel: Tactical Feed & Conversation Stream -->
-            <section class="panel panel-right">
-                <div class="panel-header">
-                    <h3>TACTICAL FEED & CHAT</h3>
-                    <span class="panel-tag">STREAM.IO</span>
-                </div>
-                <div class="chat-feed" id="chatFeed">
-                    <div class="message tony">
-                        <span class="sender">TONY:</span>
-                        <p>All core systems online. Jarvis cognitive routines merged with Ultron tactical processors. How can I assist you, Boss?</p>
+        <!-- Main Codex Grid Layout -->
+        <main class="codex-grid">
+            <!-- Left Panel: Arc Reactor Hologram, Telemetry & Quick Arsenal -->
+            <aside class="panel panel-left">
+                <!-- Arc Reactor Visualizer -->
+                <div class="core-box">
+                    <div class="core-header">
+                        <span class="core-title" id="corePersonaTitle">ARC REACTOR // T.O.N.Y. MATRIX</span>
+                        <span class="core-tag" id="coreStatusTag">ONLINE</span>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="arcCanvas" width="300" height="300"></canvas>
+                        <div class="core-status" id="coreStatus">STANDBY</div>
                     </div>
                 </div>
 
-                <!-- Text Command Input -->
-                <form class="input-form" id="commandForm" onsubmit="handleCommandSubmit(event)">
-                    <input type="text" id="commandInput" placeholder="Enter command or voice prompt..." autocomplete="off">
-                    <button type="submit" class="send-btn">TRANSMIT</button>
+                <!-- Voice Trigger Controls -->
+                <div class="voice-box">
+                    <button id="micBtn" class="mic-button" onclick="toggleVoiceInput()">
+                        <div class="mic-pulse-ring"></div>
+                        <div class="mic-icon">🎙️</div>
+                        <div class="mic-text">
+                            <span id="micLabel">PUSH TO SPEAK</span>
+                            <small id="wakeWordHint">or say "Hey Jarvis" / "Tony"</small>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Hardware & Telemetry -->
+                <div class="telemetry-box">
+                    <div class="section-title">
+                        <span>SYSTEM TELEMETRY</span>
+                        <span class="tag">REALTIME</span>
+                    </div>
+                    <div class="telemetry-item">
+                        <div class="tele-label"><span>CPU UTILIZATION</span><span id="cpu-val">0%</span></div>
+                        <div class="progress-bar"><div class="fill" id="cpu-fill" style="width: 0%"></div></div>
+                    </div>
+                    <div class="telemetry-item">
+                        <div class="tele-label"><span>MEMORY ALLOCATION</span><span id="ram-val">0%</span></div>
+                        <div class="progress-bar"><div class="fill" id="ram-fill" style="width: 0%"></div></div>
+                    </div>
+                    <div class="telemetry-item">
+                        <div class="tele-label"><span>POWER GRID</span><span id="battery-val">100%</span></div>
+                        <div class="progress-bar"><div class="fill green" id="battery-fill" style="width: 100%"></div></div>
+                    </div>
+                </div>
+
+                <!-- Quick Tactical Arsenal -->
+                <div class="arsenal-box">
+                    <div class="section-title">
+                        <span>TACTICAL ARSENAL</span>
+                        <span class="tag">MACROS</span>
+                    </div>
+                    <div class="action-grid">
+                        <button class="action-btn" onclick="triggerAction('diagnostics')">⚡ SYSTEM SCAN</button>
+                        <button class="action-btn" onclick="triggerAction('screen')">👁️ SCREEN SCAN</button>
+                        <button class="action-btn" onclick="triggerAction('weather')">🌤️ WEATHER</button>
+                        <button class="action-btn" onclick="triggerAction('status')">🛡️ FULL STATUS</button>
+                        <button class="action-btn" onclick="triggerAction('volume_up')">🔊 VOL UP</button>
+                        <button class="action-btn" onclick="triggerAction('calc')">🧮 CALCULATOR</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Right Panel: Codex Chat & Code Terminal -->
+            <section class="panel panel-right chat-panel">
+                <div class="chat-header">
+                    <div class="chat-title-info">
+                        <span class="chat-icon">💬</span>
+                        <h3 id="chatPersonaHeading">CODEX CHAT // T.O.N.Y.</h3>
+                        <span class="latency-badge" id="latencyBadge">LATENCY: 0.28s</span>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="chat-tool-btn" onclick="clearChatThread()" title="Clear Chat Thread">🗑️ CLEAR</button>
+                        <button class="chat-tool-btn" onclick="stopSpeaking()" title="Stop Voice Speech">⏹️ STOP SPEECH</button>
+                    </div>
+                </div>
+
+                <!-- Chat Feed Stream -->
+                <div class="chat-feed" id="chatFeed">
+                    <div class="message-card tony-msg">
+                        <div class="msg-header">
+                            <div class="sender-info">
+                                <span class="sender-avatar">🌐</span>
+                                <span class="sender-name">T.O.N.Y. CORE</span>
+                            </div>
+                            <span class="msg-time" id="initTime">INITIALIZED</span>
+                        </div>
+                        <div class="msg-body markdown-content">
+                            <p>Good day, sir. All core subsystems and tactical cognitive models are online and operating at peak capacity. Select your preferred persona above (<strong>J.A.R.V.I.S.</strong>, <strong>F.R.I.D.A.Y.</strong>, <strong>U.L.T.R.O.N.</strong>, or <strong>T.O.N.Y.</strong>) and give your orders.</p>
+                        </div>
+                        <div class="msg-actions">
+                            <button class="msg-btn" onclick="speakLastResponse(this)">🔊 Speak</button>
+                            <button class="msg-btn" onclick="copyMessageText(this)">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prompt Suggestion Chips -->
+                <div class="prompt-chips">
+                    <span class="chip-label">QUICK PROMPTS:</span>
+                    <button class="chip-btn" onclick="sendQuickPrompt('Give me a full status report on our systems and Arc Reactor.')">⚡ Status Report</button>
+                    <button class="chip-btn" onclick="sendQuickPrompt('What is the weather in London right now?')">🌤️ Weather</button>
+                    <button class="chip-btn" onclick="sendQuickPrompt('Write a Python function to optimize matrix multiplication.')">💻 Write Python Code</button>
+                    <button class="chip-btn" onclick="sendQuickPrompt('What is your strategic tactical outlook for today?')">🎯 Strategic Outlook</button>
+                </div>
+
+                <!-- Codex Input Console -->
+                <form class="codex-input-container" id="commandForm" onsubmit="handleCommandSubmit(event)">
+                    <div class="input-wrapper">
+                        <textarea id="commandInput" placeholder="Enter command or question for Tony / Jarvis / Friday / Ultron (Press Enter to transmit, Shift+Enter for new line)..." rows="1" onkeydown="handleInputKeydown(event)"></textarea>
+                    </div>
+                    <div class="input-actions">
+                        <button type="button" class="action-icon-btn" onclick="toggleVoiceInput()" title="Voice Input">
+                            <span id="inputMicIcon">🎙️</span>
+                        </button>
+                        <button type="submit" class="send-btn" id="sendBtn">
+                            <span>TRANSMIT</span>
+                            <span class="send-arrow">➔</span>
+                        </button>
+                    </div>
                 </form>
             </section>
         </main>
