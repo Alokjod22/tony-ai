@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONY AI // Cyber Tactical Interface</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="hud-overlay">
+        <!-- Top Status Bar -->
+        <header class="top-bar">
+            <div class="brand">
+                <div class="status-indicator live"></div>
+                <span class="logo-text">TONY <span class="sub-text">AI SYSTEM v2.5</span></span>
+            </div>
+            <div class="system-time" id="clock">00:00:00</div>
+            <div class="protocols">
+                <span class="badge">JARVIS.CORE: ACTIVE</span>
+                <span class="badge">ULTRON.TACTICAL: ONLINE</span>
+            </div>
+        </header>
+
+        <!-- Main HUD Layout -->
+        <main class="hud-grid">
+            <!-- Left Panel: Telemetry & Hardware -->
+            <section class="panel panel-left">
+                <div class="panel-header">
+                    <h3>SYSTEM TELEMETRY</h3>
+                    <span class="panel-tag">SYS.DIAG</span>
+                </div>
+                <div class="telemetry-item">
+                    <div class="tele-label"><span>CPU LOAD</span><span id="cpu-val">0%</span></div>
+                    <div class="progress-bar"><div class="fill" id="cpu-fill" style="width: 0%"></div></div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="tele-label"><span>MEMORY ALLOCATION</span><span id="ram-val">0%</span></div>
+                    <div class="progress-bar"><div class="fill" id="ram-fill" style="width: 0%"></div></div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="tele-label"><span>POWER / BATTERY</span><span id="battery-val">100%</span></div>
+                    <div class="progress-bar"><div class="fill green" id="battery-fill" style="width: 100%"></div></div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="tele-label"><span>SYSTEM OS</span><span id="os-val">WINDOWS</span></div>
+                </div>
+
+                <!-- Quick Action Arsenal -->
+                <div class="panel-header" style="margin-top: 25px;">
+                    <h3>ARSENAL PROTOCOLS</h3>
+                    <span class="panel-tag">EXEC</span>
+                </div>
+                <div class="action-grid">
+                    <button class="action-btn" onclick="triggerAction('diagnostics')">⚡ SYSTEM SCAN</button>
+                    <button class="action-btn" onclick="triggerAction('screen')">👁️ SCREEN VISION</button>
+                    <button class="action-btn" onclick="triggerAction('calc')">🧮 CALCULATOR</button>
+                    <button class="action-btn" onclick="triggerAction('notes')">📝 NOTEPAD</button>
+                    <button class="action-btn" onclick="triggerAction('weather')">🌤️ WEATHER</button>
+                    <button class="action-btn" onclick="triggerAction('volume_up')">🔊 VOL UP</button>
+                </div>
+            </section>
+
+            <!-- Center Panel: Arc Reactor Core Visualizer -->
+            <section class="panel-center">
+                <div class="core-container">
+                    <canvas id="arcCanvas" width="380" height="380"></canvas>
+                    <div class="core-status" id="coreStatus">STANDBY</div>
+                </div>
+
+                <!-- Voice Trigger Controls -->
+                <div class="voice-controls">
+                    <button id="micBtn" class="mic-button" onclick="toggleVoiceInput()">
+                        <div class="mic-icon">🎙️</div>
+                        <span id="micLabel">PUSH TO ENGAGE VOICE</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right Panel: Tactical Feed & Conversation Stream -->
+            <section class="panel panel-right">
+                <div class="panel-header">
+                    <h3>TACTICAL FEED & CHAT</h3>
+                    <span class="panel-tag">STREAM.IO</span>
+                </div>
+                <div class="chat-feed" id="chatFeed">
+                    <div class="message tony">
+                        <span class="sender">TONY:</span>
+                        <p>All core systems online. Jarvis cognitive routines merged with Ultron tactical processors. How can I assist you, Boss?</p>
+                    </div>
+                </div>
+
+                <!-- Text Command Input -->
+                <form class="input-form" id="commandForm" onsubmit="handleCommandSubmit(event)">
+                    <input type="text" id="commandInput" placeholder="Enter command or voice prompt..." autocomplete="off">
+                    <button type="submit" class="send-btn">TRANSMIT</button>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
