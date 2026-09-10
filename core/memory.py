@@ -8,7 +8,7 @@ class MemoryEngine:
     """Persistent SQLite-backed memory store for Tony AI."""
 
     def __init__(self, db_path=DB_PATH):
-        self.db_path = db_path
+        self.db_path = str(db_path)
         self._init_db()
 
     def _init_db(self):

@@ -176,7 +176,22 @@ class TonyBrain:
                     active_model = model_candidate
                     break
             except Exception as e:
-                last_error = e
+                # If tool schema format failed, retry once without tools
+                try:
+                    response = await asyncio.to_thread(
+                        self.client.models.generate_content,
+                        model=model_candidate,
+                        contents=user_text,
+                        config=types.GenerateContentConfig(
+                            system_instruction=system_instruction,
+                            temperature=0.7
+                        )
+                    )
+                    if response and response.text:
+                        active_model = model_candidate
+                        break
+                except Exception as inner_e:
+                    last_error = inner_e
                 continue
 
         if not response:
