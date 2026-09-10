@@ -22,8 +22,8 @@ VOICE_RATE = int(os.getenv("VOICE_RATE", "175"))
 VOICE_VOLUME = float(os.getenv("VOICE_VOLUME", "1.0"))
 
 # Web Server Settings
-SERVER_HOST = os.getenv("SERVER_HOST", "127.0.0.1")
-SERVER_PORT = int(os.getenv("SERVER_PORT", "8000"))
+SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
+SERVER_PORT = int(os.getenv("PORT") or os.getenv("SERVER_PORT", "8000"))
 
 # Database
 DB_PATH = DATA_DIR / "tony_memory.db"
