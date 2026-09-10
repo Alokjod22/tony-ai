@@ -1,9 +1,8 @@
 // ==========================================================================
 // TONY AI // Cybernetic Super-Intelligence Operating Layer & Chat Controller
-// Full 100-Feature Embedded Chat Matrix & Dynamic Persona Theme Engine
+// Single-Section Embedded Chat Matrix & Dynamic Persona Theme Engine
 // ==========================================================================
 
-let ws = null;
 let isRecording = false;
 let recognition = null;
 let voiceOutputEnabled = true;
@@ -13,12 +12,10 @@ let userSpeedMultiplier = 1.2;
 let currentPersona = "tony";
 let currentSecurityMode = "ASSIST";
 let currentReasoningMode = "balanced";
-let cachedMemories = [];
 
 // Anti-echo & duplicate submission guards
 let isAwaitingChatResponse = false;
 let isCurrentlySpeaking = false;
-let speechQueue = [];
 let lastTransmittedText = "";
 let lastTransmittedTime = 0;
 
@@ -89,16 +86,14 @@ try {
     customPersonaVoices = {};
 }
 
-// --- 1. Dynamic Persona & Pitch-Black Theme Switcher ---
+// 1. Persona & Pitch-Black Theme Switcher
 function switchPersona(personaId, triggerVoice = false) {
     personaId = (personaId || "tony").toLowerCase();
     if (!PERSONA_CONFIGS[personaId]) personaId = "tony";
     currentPersona = personaId;
 
-    // Dynamically apply Theme to Pitch-Black Body
     document.body.setAttribute("data-theme", personaId);
 
-    // Update Top Selector Buttons
     document.querySelectorAll(".persona-btn").forEach(btn => {
         if (btn.getAttribute("data-persona") === personaId) {
             btn.classList.add("active");
@@ -109,13 +104,11 @@ function switchPersona(personaId, triggerVoice = false) {
 
     const config = PERSONA_CONFIGS[personaId];
     
-    // Update Ambient Wake Word Display
     const ambientText = document.getElementById("ambientText");
     if (ambientText) {
         ambientText.innerText = personaId === "jarvis" ? "HEY JARVIS" : (personaId === "friday" ? "HEY FRIDAY" : (personaId === "ultron" ? "ULTRON" : "HEY TONY"));
     }
 
-    // Update Welcome avatar if present
     const welcomeAvatar = document.getElementById("welcomeAvatar");
     const welcomeSender = document.getElementById("welcomeSender");
     if (welcomeAvatar) welcomeAvatar.innerText = config.avatar;
@@ -126,7 +119,7 @@ function switchPersona(personaId, triggerVoice = false) {
     }
 }
 
-// --- 2. Voice Output & TTS Engine ---
+// 2. TTS Voice Engine
 function resolveVoiceForPersona(personaId) {
     if (!('speechSynthesis' in window)) return null;
     const voices = window.speechSynthesis.getVoices();
@@ -161,7 +154,6 @@ function speakResponse(text) {
 
     window.speechSynthesis.cancel();
 
-    // Clean markdown for speech
     let cleanText = text
         .replace(/###|##|#/g, '')
         .replace(/\*\*(.*?)\*\*/g, '$1')
@@ -198,7 +190,6 @@ function speakResponse(text) {
         isCurrentlySpeaking = true;
         const interruptBtn = document.getElementById("interruptBtn");
         if (interruptBtn) interruptBtn.style.display = "flex";
-        // Stop recognition to prevent acoustic echo
         if (recognition && isRecording) {
             try { recognition.abort(); } catch(e) {}
         }
@@ -232,7 +223,7 @@ function bargeInInterrupt() {
     if (interruptBtn) interruptBtn.style.display = "none";
 }
 
-// --- 3. Speech Recognition & Wake Word Engine ---
+// 3. Speech Recognition Engine
 function initSpeechRecognition() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) return;
@@ -259,7 +250,6 @@ function initSpeechRecognition() {
             return;
         }
 
-        // Check for Wake Word Trigger
         const lower = transcript.toLowerCase();
         let cleanedPrompt = transcript;
         if (lower.startsWith("hey tony") || lower.startsWith("hey jarvis") || lower.startsWith("friday") || lower.startsWith("ultron")) {
@@ -362,7 +352,7 @@ function setReasoningMode(mode) {
     currentReasoningMode = mode;
 }
 
-// --- 4. Central Chat Message Sender & In-Chat Renderer ---
+// 4. Central Chat Message Sender (ALL Features In-Chat)
 async function sendChatMessage() {
     const input = document.getElementById("chatInput");
     if (!input) return;
@@ -373,10 +363,8 @@ async function sendChatMessage() {
     autoResizeChatInput(input);
     isAwaitingChatResponse = true;
 
-    // Render User Message
     renderMessage("user", text);
 
-    // Render Thinking Bubble
     const thinkingId = "thinking-" + Date.now();
     renderThinkingBubble(thinkingId);
 
@@ -394,16 +382,14 @@ async function sendChatMessage() {
         const data = await resp.json();
         removeThinkingBubble(thinkingId);
 
-        // Render Assistant Response with full telemetry metadata
         renderAssistantResponse(data);
 
-        // TTS Speech Output
         if (data.text) {
             speakResponse(data.text);
         }
     } catch (e) {
         removeThinkingBubble(thinkingId);
-        renderMessage("assistant", "⚠️ **Matrix Synchronization Error:** Connection to core cognitive neural network interrupted.");
+        renderMessage("assistant", "⚠️ **Connection Error:** Neural uplink interrupted.");
     } finally {
         isAwaitingChatResponse = false;
     }
@@ -501,7 +487,7 @@ function renderAssistantResponse(data) {
 
     let cardExtra = "";
 
-    // 1. Render Interactive Action Approval Card
+    // Inline Action Approval Card
     if (data.approval_required) {
         const app = data.approval_required;
         cardExtra += `
@@ -516,7 +502,7 @@ function renderAssistantResponse(data) {
         `;
     }
 
-    // 2. Render Mission Stepper
+    // Inline Mission Stepper
     if (data.intent === "MISSION_EXECUTION" && data.tool_results && data.tool_results.steps_executed) {
         cardExtra += `
             <div class="inline-mission-card">
@@ -547,10 +533,6 @@ function renderAssistantResponse(data) {
 
     stream.appendChild(msgDiv);
     stream.scrollTop = stream.scrollHeight;
-
-    // Update Top Telemetry Mood Indicator
-    const hudMood = document.getElementById("hudMoodVal");
-    if (hudMood) hudMood.innerText = emotion;
 }
 
 // In-chat Action Approval Resolver
@@ -575,7 +557,7 @@ async function resolveApproval(approvalId, approved, command = "") {
     }
 }
 
-// --- 5. Quick Action Palette Triggers ---
+// 5. Quick Action Palette Triggers (All Output Directly in Chat)
 function triggerQuickAction(type) {
     const input = document.getElementById("chatInput");
     if (!input) return;
@@ -591,11 +573,16 @@ function triggerQuickAction(type) {
     else if (type === "deep_research") input.value = "Deep research on autonomous agent architectures";
     else if (type === "system_diag") input.value = "Run hardware diagnostics and check slow PC";
     else if (type === "security_audit") input.value = "Run security sandbox audit";
+    else if (type === "clear_chat") {
+        const stream = document.getElementById("chatMessages");
+        if (stream) stream.innerHTML = "";
+        return;
+    }
 
     sendChatMessage();
 }
 
-// --- 6. Vision & Screen Scanning ---
+// 6. Vision & Screen Scanning
 function captureAndSendScreen() {
     const input = document.getElementById("chatInput");
     if (input) input.value = "Inspect current screen and report all visible errors or UI elements.";
@@ -611,88 +598,7 @@ function handleFileUpload(inputEl) {
     }
 }
 
-// --- 7. Drawers & Modals Handlers ---
-function openMemoryVaultDrawer() {
-    const drawer = document.getElementById("memoryDrawer");
-    if (drawer) drawer.classList.add("open");
-    loadMemories();
-}
-
-function openPluginDrawer() {
-    const drawer = document.getElementById("pluginDrawer");
-    if (drawer) drawer.classList.add("open");
-}
-
-function closeDrawer(id) {
-    const drawer = document.getElementById(id);
-    if (drawer) drawer.classList.remove("open");
-}
-
-function openDiagnosticsModal() {
-    const modal = document.getElementById("diagModal");
-    if (modal) modal.classList.add("open");
-    fetchHardwareDiagnostics();
-}
-
-function openVoiceModal() {
-    const modal = document.getElementById("voiceModal");
-    if (modal) modal.classList.add("open");
-    populateVoiceSelects();
-}
-
-function closeModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) modal.classList.remove("open");
-}
-
-async function loadMemories() {
-    try {
-        const [sumRes, memRes] = await Promise.all([
-            fetch("/api/memory/summary"),
-            fetch("/api/memory")
-        ]);
-        const summary = await sumRes.json();
-        const memories = await memRes.json();
-        cachedMemories = memories;
-
-        const metrics = document.getElementById("memoryMetrics");
-        if (metrics) metrics.innerText = `${summary.total_memories} facts & preferences indexed.`;
-
-        const hudCount = document.getElementById("hudMemoryCount");
-        if (hudCount) hudCount.innerText = `${summary.total_memories} NODES`;
-
-        renderMemoryCards(memories);
-    } catch(e) {
-        console.log("Memory load error", e);
-    }
-}
-
-function renderMemoryCards(list) {
-    const container = document.getElementById("memoryListContainer");
-    if (!container) return;
-    if (!list || list.length === 0) {
-        container.innerHTML = `<p style="font-size:0.75rem; color:var(--text-dim);">No permanent memories stored yet.</p>`;
-        return;
-    }
-
-    container.innerHTML = list.map(m => `
-        <div class="mem-item-card" id="mem-${m.id}">
-            <div class="mem-header">
-                <span>[${m.category.toUpperCase()}] ★${m.importance}</span>
-                <span>${m.timestamp || ''}</span>
-            </div>
-            <div class="mem-text">${escapeHtml(m.content)}</div>
-            <button class="mem-del-btn" onclick="deleteMemoryEntry(${m.id})">✕ Forget</button>
-        </div>
-    `).join('');
-}
-
-function filterMemories(term) {
-    term = (term || "").toLowerCase();
-    const filtered = cachedMemories.filter(m => m.content.toLowerCase().includes(term) || m.category.toLowerCase().includes(term));
-    renderMemoryCards(filtered);
-}
-
+// In-Chat Memory Creation
 async function promptAddMemory() {
     const fact = prompt("Enter a new fact, project info, or preference for TONY to remember permanently:");
     if (fact && fact.trim()) {
@@ -701,75 +607,22 @@ async function promptAddMemory() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content: fact.trim(), category: "fact", importance: 4 })
         });
-        loadMemories();
+        renderMessage("assistant", `### 🧠 Memory Indexed Successfully\nTONY has permanently recorded: **"${escapeHtml(fact.trim())}"**.`);
     }
 }
 
-async function deleteMemoryEntry(id) {
-    await fetch(`/api/memory/${id}`, { method: "DELETE" });
-    const el = document.getElementById(`mem-${id}`);
-    if (el) el.remove();
+// Voice Calibration Modal
+function openVoiceModal() {
+    const modal = document.getElementById("voiceModal");
+    if (modal) modal.classList.add("open");
+    populateVoiceSelects();
 }
 
-function exportMemories() {
-    window.open("/api/memory/export", "_blank");
+function closeVoiceModal() {
+    const modal = document.getElementById("voiceModal");
+    if (modal) modal.classList.remove("open");
 }
 
-function importMemories(inputEl) {
-    if (inputEl.files && inputEl.files[0]) {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = JSON.parse(e.target.result);
-                await fetch("/api/memory/import", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data)
-                });
-                loadMemories();
-                alert("Memories imported successfully.");
-            } catch(err) {
-                alert("Invalid JSON file.");
-            }
-        };
-        reader.readAsText(inputEl.files[0]);
-    }
-}
-
-async function purgeMemories() {
-    if (confirm("Purge all indexed cognitive memories permanently?")) {
-        cachedMemories.forEach(m => deleteMemoryEntry(m.id));
-    }
-}
-
-function togglePlugin(pluginId, enabled) {
-    console.log(`Plugin ${pluginId} toggled to ${enabled}`);
-}
-
-async function fetchHardwareDiagnostics() {
-    const body = document.getElementById("diagModalBody");
-    if (!body) return;
-    try {
-        const res = await fetch("/api/telemetry");
-        const d = await res.json();
-        body.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-family:var(--font-mono); font-size:0.75rem;">
-                <div><strong>OS:</strong> ${d.os}</div>
-                <div><strong>CPU Usage:</strong> ${d.cpu_usage_percent}% (${d.cpu_cores} Cores)</div>
-                <div><strong>RAM Usage:</strong> ${d.ram_percent}% (${d.ram_used_gb} GB / ${d.ram_total_gb} GB)</div>
-                <div><strong>GPU Load:</strong> ${d.gpu_usage_percent}%</div>
-                <div><strong>Disk:</strong> ${d.disk_percent}% used (${d.disk_free_gb} GB Free)</div>
-                <div><strong>Network:</strong> ${d.network_mbps}</div>
-                <div><strong>Battery:</strong> ${d.battery_percent}</div>
-                <div><strong>Temperature:</strong> ${d.cpu_temperature}</div>
-            </div>
-        `;
-    } catch(e) {
-        body.innerHTML = "<p>Telemetry offline.</p>";
-    }
-}
-
-// Voice Modal Configuration Helpers
 function populateVoiceSelects() {
     if (!('speechSynthesis' in window)) return;
     const voices = window.speechSynthesis.getVoices();
@@ -821,7 +674,6 @@ function resetDefaultVoices() {
     alert("Restored default persona voice matrices.");
 }
 
-// Helper: Escape HTML
 function escapeHtml(text) {
     if (!text) return "";
     return text
@@ -832,7 +684,6 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
-// Live Clock Updater
 function startClock() {
     setInterval(() => {
         const el = document.getElementById("hudClock");
@@ -840,12 +691,10 @@ function startClock() {
     }, 1000);
 }
 
-// --- Initialize Everything on Page Load ---
 window.addEventListener("DOMContentLoaded", () => {
     startClock();
     initSpeechRecognition();
     switchPersona("tony", false);
-    loadMemories();
 
     if ('speechSynthesis' in window) {
         window.speechSynthesis.onvoiceschanged = () => {

@@ -51,7 +51,7 @@ class AutonomousResearchEngine:
             pass
 
         # 3. Synthesize Comprehensive Markdown Report
-        report_markdown = f"""# CODEX TACTICAL RESEARCH BRIEF: {topic.upper()}
+        report_markdown = f"""# TACTICAL RESEARCH BRIEF: {topic.upper()}
 **Classification:** OPEN INTELLIGENCE // TONY AI
 **Date Generated:** {time.strftime('%Y-%m-%d %H:%M:%S')}
 **Analyzed Sources:** {len(sources)} Verified Data Feeds

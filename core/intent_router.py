@@ -12,7 +12,7 @@ class IntentRouter:
         "VISION_OCR",
         "AUTOMATION_WORKFLOW",
         "MEMORY_QUERY",
-        "RESEARCH_CODEX",
+        "DEEP_RESEARCH",
         "CONVERSATION"
     ]
 
@@ -63,7 +63,7 @@ class IntentRouter:
         # 6. Deep Research
         if any(w in t for w in ["deep research", "research on", "compare sources", "analyze literature", "cite sources", "investigate", "comprehensive analysis"]):
             return {
-                "intent": "RESEARCH_CODEX",
+                "intent": "DEEP_RESEARCH",
                 "confidence": 0.88,
                 "handler": "research_engine"
             }

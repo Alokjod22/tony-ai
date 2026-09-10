@@ -9,7 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body data-theme="tony">
-    <!-- Pitch Black OLED Cybernetic HUD Atmosphere -->
+    <!-- Pitch Black OLED Cybernetic HUD Grid & Scanlines -->
     <div class="hud-background-grid"></div>
     <div class="hud-scanlines"></div>
     <div class="hud-corner top-left"></div>
@@ -18,7 +18,7 @@
     <div class="hud-corner bottom-right"></div>
 
     <div class="hud-overlay">
-        <!-- 1. Top Tactical Header & Persona Matrix Selector -->
+        <!-- Top Tactical Command Header -->
         <header class="top-bar">
             <!-- Brand & Holographic Arc Core -->
             <div class="brand-section">
@@ -28,10 +28,10 @@
                 <div class="brand-titles">
                     <div class="brand-main">
                         <span class="logo-text">T.O.N.Y.</span>
-                        <span class="version-tag">CODEX 4.0 PRO</span>
-                        <span class="hud-pill live-pill">● PITCH BLACK OS</span>
+                        <span class="version-tag">STARK OS 4.0</span>
+                        <span class="hud-pill live-pill">● ONLINE</span>
                     </div>
-                    <span class="sub-text">TACTICAL SUPER-INTELLIGENCE & COMMAND CORE</span>
+                    <span class="sub-text">TACTICAL SUPER-INTELLIGENCE CORE</span>
                 </div>
             </div>
 
@@ -64,7 +64,7 @@
                 </button>
             </div>
 
-            <!-- Top Header Controls -->
+            <!-- Header Controls -->
             <div class="header-controls">
                 <div class="control-group">
                     <span class="ctrl-label">SECURITY:</span>
@@ -115,86 +115,55 @@
             </div>
         </header>
 
-        <!-- 2. Live Command Center Telemetry Strip -->
-        <section class="command-center-hud">
-            <div class="hud-stat-pill">
-                <span class="dot-green">●</span> <span class="hud-lbl">SYSTEM</span> <span class="hud-val" id="hudSysStatus">ONLINE</span>
-            </div>
-            <div class="hud-stat-pill">
-                <span class="dot-cyan">●</span> <span class="hud-lbl">VOICE</span> <span class="hud-val" id="hudVoiceStatus">READY</span>
-            </div>
-            <div class="hud-stat-pill">
-                <span class="dot-cyan">●</span> <span class="hud-lbl">VISION</span> <span class="hud-val" id="hudVisionStatus">READY</span>
-            </div>
-            <div class="hud-stat-pill">
-                <span class="dot-gold">●</span> <span class="hud-lbl">MEMORY</span> <span class="hud-val" id="hudMemoryCount">INDEXED</span>
-            </div>
-            <div class="hud-stat-pill">
-                <span class="dot-green">●</span> <span class="hud-lbl">SECURITY</span> <span class="hud-val" id="hudSecStatus">SECURE</span>
-            </div>
-            <div class="hud-telemetry-group">
-                <span class="telem-item">CPU: <strong id="hudCpuVal">24%</strong></span>
-                <span class="telem-item">RAM: <strong id="hudRamVal">51%</strong></span>
-                <span class="telem-item">GPU: <strong id="hudGpuVal">18%</strong></span>
-                <span class="telem-item">NET: <strong id="hudNetVal">38 Mbps</strong></span>
-                <span class="telem-item mood-tag">MOOD: <strong id="hudMoodVal">FOCUSED</strong></span>
-            </div>
-            <div class="hud-quick-drawers">
-                <button class="hud-drawer-btn" onclick="openMemoryVaultDrawer()" title="Explore Long-Term Memories & Facts">🧠 VAULT</button>
-                <button class="hud-drawer-btn" onclick="openPluginDrawer()" title="Manage AI Plugins & Permissions">🧩 PLUGINS</button>
-                <button class="hud-drawer-btn" onclick="openDiagnosticsModal()" title="Full System Hardware Diagnostics">📊 DIAGNOSTICS</button>
-            </div>
-        </section>
-
-        <!-- 3. Unified Cybernetic Chat & Command Stream Workspace -->
-        <main class="unified-workspace">
+        <!-- SINGLE CENTRAL CHAT WORKSPACE (ALL FEATURES WORK IN THIS CHAT STREAM) -->
+        <main class="chat-workspace">
             <div class="chat-command-stream" id="chatMessages">
-                <!-- Welcome Holographic Briefing Card -->
+                <!-- Initial Welcome Briefing -->
                 <div class="message assistant" id="welcomeMsg">
                     <div class="msg-header">
                         <span class="sender-avatar" id="welcomeAvatar">🌐</span>
                         <span class="sender-name" id="welcomeSender">T.O.N.Y. ARC MATRIX</span>
-                        <span class="msg-time" id="welcomeTime">SYSTEM INIT</span>
+                        <span class="msg-time" id="welcomeTime">SYSTEM READY</span>
                         <span class="confidence-badge">⚡ CONFIDENCE: 99.8%</span>
                         <span class="emotion-badge" id="welcomeEmotionBadge">MOOD: FOCUSED</span>
                     </div>
                     <div class="msg-bubble">
-                        <h3>⚡ TONY Cybernetic Super-Intelligence Operating Layer Active</h3>
-                        <p>All 100 tactical subsystems are initialized and integrated directly into this Pitch-Black Command Stream.</p>
+                        <h3>⚡ TONY Cybernetic Super-Intelligence Core Online</h3>
+                        <p>Welcome, Boss. All 100 tactical systems—Memory, Vision, Computer Control, Dev Core, Android ADB, Missions, and Deep Research—are active directly in this Chat Interface.</p>
                         <div class="welcome-capabilities-grid">
                             <div class="cap-card">
-                                <strong>🧠 Intelligence Core</strong>
-                                <span>Long-term memory, emotional adaptation, self-reflection & multi-turn context.</span>
+                                <strong>🧠 Memory & Knowledge</strong>
+                                <span>Remembers user facts, preferences, projects, and past conversations.</span>
                             </div>
                             <div class="cap-card">
                                 <strong>🎙️ Voice & Interruption</strong>
-                                <span>Wake word ("Hey Tony"), hands-free conversation, barge-in stop & whisper mode.</span>
+                                <span>Wake words ("Hey Tony"), hands-free dialogue, barge-in stop & whisper mode.</span>
                             </div>
                             <div class="cap-card">
                                 <strong>👁️ Vision & OCR</strong>
-                                <span>Screen understanding, OCR text extraction, UI detection & error diagnostics.</span>
+                                <span>Screen understanding, OCR text extraction, UI detection & troubleshooting.</span>
                             </div>
                             <div class="cap-card">
                                 <strong>🖥️ Computer Control</strong>
-                                <span>Action approval system, file/folder operations, terminal execution & app launch.</span>
+                                <span>Action approvals, terminal execution, file actions & app launches.</span>
                             </div>
                             <div class="cap-card">
                                 <strong>📱 Android & Dev Core</strong>
-                                <span>ADB device manager, logcat error streaming, Git assistant & crash analyzer.</span>
+                                <span>ADB console, logcat error streaming, Git status & crash analyzer.</span>
                             </div>
                             <div class="cap-card">
                                 <strong>⚙️ Missions & Research</strong>
-                                <span>Multi-step autonomous missions, deep web research & source credibility citations.</span>
+                                <span>Autonomous multi-step missions, deep web research & credibility citations.</span>
                             </div>
                         </div>
                         <div class="msg-reflection-footer">
-                            🛡️ <em>Self-Reflection: All local security shields, memory databases, and neural models verified operational.</em>
+                            🛡️ <em>Self-Reflection: All local security shields and cognitive modules verified operational.</em>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 4. Quick-Action Tool & Command Palette Ribbon (Docked directly above Chat Input) -->
+            <!-- Quick-Action Tool Ribbon (Above Chat Input) -->
             <div class="quick-action-ribbon">
                 <div class="ribbon-scroll">
                     <button class="ribbon-pill" onclick="triggerQuickAction('what_remember')">🧠 What do you remember?</button>
@@ -208,10 +177,11 @@
                     <button class="ribbon-pill" onclick="triggerQuickAction('deep_research')">🌐 Deep Research</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('system_diag')">📊 System Diagnostics</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('security_audit')">🛡️ Security Audit</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('clear_chat')">🧹 Clear Stream</button>
                 </div>
             </div>
 
-            <!-- 5. Chat Input & Audio Command Deck -->
+            <!-- Chat Input & Audio Deck -->
             <div class="chat-input-deck">
                 <!-- Media / Screen / Attachment Tools -->
                 <div class="input-media-tools">
@@ -233,7 +203,6 @@
                         onkeydown="handleChatKeyDown(event)"
                         oninput="autoResizeChatInput(this)"
                     ></textarea>
-                    <div class="input-glow-bar"></div>
                 </div>
 
                 <!-- Ambient Voice & Action Controls -->
@@ -266,100 +235,12 @@
         </main>
     </div>
 
-    <!-- 6. Slide-Over Drawers & Modals (Integrated without leaving Chat) -->
-
-    <!-- Memory & Knowledge Vault Slide-Over Drawer -->
-    <div class="slide-drawer" id="memoryDrawer">
-        <div class="drawer-header">
-            <h3>🧠 Long-Term Memory & Knowledge Vault</h3>
-            <button class="drawer-close-btn" onclick="closeDrawer('memoryDrawer')">✕</button>
-        </div>
-        <div class="drawer-body">
-            <div class="drawer-search-bar">
-                <input type="text" id="memorySearchInput" placeholder="Search memories, facts, preferences..." oninput="filterMemories(this.value)">
-                <button class="hud-pill" onclick="promptAddMemory()">+ ADD FACT</button>
-            </div>
-            <div class="memory-summary-card" id="memorySummaryCard">
-                <strong>Memory Metrics:</strong> <span id="memoryMetrics">Loading...</span>
-            </div>
-            <div class="memory-list-container" id="memoryListContainer">
-                <!-- Dynamically populated memories -->
-            </div>
-            <div class="drawer-actions">
-                <button class="hud-pill" onclick="exportMemories()">📥 Export JSON</button>
-                <label class="hud-pill">
-                    📤 Import JSON
-                    <input type="file" accept=".json" style="display:none;" onchange="importMemories(this)">
-                </label>
-                <button class="hud-pill danger" onclick="purgeMemories()">⚠️ Purge All</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Plugin Management Slide-Over Drawer -->
-    <div class="slide-drawer" id="pluginDrawer">
-        <div class="drawer-header">
-            <h3>🧩 AI Plugins & Tool Sandboxes</h3>
-            <button class="drawer-close-btn" onclick="closeDrawer('pluginDrawer')">✕</button>
-        </div>
-        <div class="drawer-body">
-            <div class="plugin-item">
-                <div class="plug-info">
-                    <strong>📱 Android ADB & Device Core</strong>
-                    <span>Enables ADB shell, dumpsys, APK management and device telemetry.</span>
-                </div>
-                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('adb', this.checked)"><span class="slider"></span></label>
-            </div>
-            <div class="plugin-item">
-                <div class="plug-info">
-                    <strong>👁️ Vision & Screen OCR Engine</strong>
-                    <span>Enables viewport screenshot capture, OCR error extraction, and UI bounds detection.</span>
-                </div>
-                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('vision', this.checked)"><span class="slider"></span></label>
-            </div>
-            <div class="plugin-item">
-                <div class="plug-info">
-                    <strong>🌐 Deep Autonomous Web Search</strong>
-                    <span>Enables multi-source research scraping and automated source credibility scoring.</span>
-                </div>
-                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('research', this.checked)"><span class="slider"></span></label>
-            </div>
-            <div class="plugin-item">
-                <div class="plug-info">
-                    <strong>💻 Developer Core & Git Suite</strong>
-                    <span>Enables stack trace parsing, git repo scanning, and build monitoring.</span>
-                </div>
-                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('dev', this.checked)"><span class="slider"></span></label>
-            </div>
-            <div class="plugin-item">
-                <div class="plug-info">
-                    <strong>⚙️ Multi-Step Mission Engine</strong>
-                    <span>Enables automated mission macros, build sequences, and workflow triggers.</span>
-                </div>
-                <label class="switch"><input type="checkbox" checked onchange="togglePlugin('missions', this.checked)"><span class="slider"></span></label>
-            </div>
-        </div>
-    </div>
-
-    <!-- Full Hardware Diagnostics Modal -->
-    <div class="hud-modal" id="diagModal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>📊 System Hardware & Telemetry Matrix</h3>
-                <button class="drawer-close-btn" onclick="closeModal('diagModal')">✕</button>
-            </div>
-            <div class="modal-body" id="diagModalBody">
-                <p>Loading real-time hardware telemetry...</p>
-            </div>
-        </div>
-    </div>
-
     <!-- Voice Calibration Modal -->
     <div class="hud-modal" id="voiceModal">
         <div class="modal-card">
             <div class="modal-header">
                 <h3>🎙️ Voice Engine & Persona Calibrator</h3>
-                <button class="drawer-close-btn" onclick="closeModal('voiceModal')">✕</button>
+                <button class="modal-close-btn" onclick="closeVoiceModal()">✕</button>
             </div>
             <div class="modal-body">
                 <div class="voice-persona-calibrator">
@@ -387,7 +268,7 @@
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="hud-pill" onclick="testCurrentVoice()">▶ Test Voice Synthesis</button>
+                    <button class="hud-pill" onclick="testCurrentVoice()">▶ Test Voice</button>
                     <button class="hud-pill danger" onclick="resetDefaultVoices()">↺ Reset Defaults</button>
                 </div>
             </div>

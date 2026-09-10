@@ -191,14 +191,14 @@ class TonyBrain:
                 "reasoning_mode": reasoning_mode
             }
 
-        elif intent == "RESEARCH_CODEX" or lower_text.startswith("research ") or "deep research" in lower_text:
+        elif intent == "DEEP_RESEARCH" or lower_text.startswith("research ") or "deep research" in lower_text:
             clean_topic = re.sub(r'^(deep research|research on|research|investigate)\s*', '', user_text, flags=re.I).strip()
             res = self.research.perform_deep_research(clean_topic or user_text)
             self.memory.add_message("assistant", res["markdown_report"], persona=persona)
             return {
                 "text": res["markdown_report"],
                 "tool_results": res,
-                "intent": intent,
+                "intent": "DEEP_RESEARCH",
                 "emotion": "ANALYTICAL",
                 "confidence": 98.4,
                 "reflection": "Multi-source research synthesized with citation cross-referencing.",
