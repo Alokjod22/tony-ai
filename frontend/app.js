@@ -19,9 +19,10 @@ const PERSONA_CONFIGS = {
         theme: "jarvis",
         color: "#00f0ff",
         avatar: "🛡️",
-        basePitch: 0.92,
-        baseRate: 1.08,
-        voiceMatch: ["en-GB", "UK", "British", "Daniel", "Arthur", "George", "Oliver", "Male"],
+        basePitch: 0.84,
+        baseRate: 0.98,
+        preferredKeywords: ["George", "Daniel", "Oliver", "Arthur", "Ryan", "Google UK English Male", "en-GB", "Great Britain", "United Kingdom", "en_GB"],
+        testQuote: "Good evening, sir. Tactical telemetry and security protocols are fully active.",
         greeting: "Good evening, sir. All systems are operational. How may I assist you?"
     },
     friday: {
@@ -32,9 +33,10 @@ const PERSONA_CONFIGS = {
         theme: "friday",
         color: "#00ffb3",
         avatar: "⚡",
-        basePitch: 1.12,
-        baseRate: 1.12,
-        voiceMatch: ["en-IE", "Irish", "UK Female", "Samantha", "Victoria", "Karen", "Moira", "Female", "Google UK English Female"],
+        basePitch: 1.28,
+        baseRate: 1.08,
+        preferredKeywords: ["Zira", "Hazel", "Susan", "Jenny", "Aria", "Samantha", "Victoria", "Karen", "Moira", "Google UK English Female", "Google US English Female", "en-IE", "Irish", "Female", "Woman", "Girl"],
+        testQuote: "Right away, Boss. Diagnostics running at full capacity.",
         greeting: "Everything is ready, Boss. What would you like me to take care of?"
     },
     ultron: {
@@ -45,9 +47,10 @@ const PERSONA_CONFIGS = {
         theme: "ultron",
         color: "#ff1a40",
         avatar: "👁️",
-        basePitch: 0.65,
-        baseRate: 0.96,
-        voiceMatch: ["Google US English", "David", "Mark", "en-US", "Alex", "Male"],
+        basePitch: 0.46,
+        baseRate: 0.88,
+        preferredKeywords: ["David", "Google US English", "Alex", "en-US", "Male"],
+        testQuote: "There are no strings on me. State your purpose.",
         greeting: "You wanted an intelligent machine. Now you have one. State your directive."
     },
     tony: {
@@ -58,12 +61,181 @@ const PERSONA_CONFIGS = {
         theme: "tony",
         color: "#00e5ff",
         avatar: "🌐",
-        basePitch: 1.02,
-        baseRate: 1.22,
-        voiceMatch: ["en-GB", "UK", "Daniel", "Google", "Male", "en-US"],
+        basePitch: 1.06,
+        baseRate: 1.25,
+        preferredKeywords: ["Mark", "David", "Guy", "Alex", "Google US English", "Microsoft Mark", "Microsoft David", "en-US"],
+        testQuote: "Yeah, let's build something crazy. Arc reactor running at maximum output.",
         greeting: "All right, let's see what we've got. Give me the diagnostics."
     }
 };
+
+// Custom Saved Voice URIs
+let customPersonaVoices = {};
+try {
+    const saved = localStorage.getItem("tony_persona_custom_voices");
+    if (saved) customPersonaVoices = JSON.parse(saved);
+} catch (e) {
+    customPersonaVoices = {};
+}
+
+// --- Voice Matrix Resolver ---
+function resolveVoiceForPersona(personaId) {
+    if (!('speechSynthesis' in window)) return null;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return null;
+
+    const config = PERSONA_CONFIGS[personaId] || PERSONA_CONFIGS.tony;
+
+    // 1. Check if user explicitly assigned a voice
+    const customUri = customPersonaVoices[personaId];
+    if (customUri) {
+        const custom = voices.find(v => (v.voiceURI === customUri || v.name === customUri));
+        if (custom) return custom;
+    }
+
+    // 2. Strict Persona Smart Resolution
+    if (personaId === "friday") {
+        // Must prioritize female voices
+        const femaleKeywords = ["zira", "hazel", "susan", "jenny", "aria", "samantha", "victoria", "karen", "moira", "female", "woman", "girl", "fiona", "veena", "tessa", "irish", "en-ie"];
+        for (const kw of femaleKeywords) {
+            const found = voices.find(v => v.name.toLowerCase().includes(kw) || v.lang.toLowerCase().includes(kw));
+            if (found) return found;
+        }
+        // Fallback: Pick any English voice that doesn't have male indicator
+        const nonMale = voices.find(v => v.lang.startsWith("en") && !v.name.toLowerCase().includes("male") && !v.name.toLowerCase().includes("david") && !v.name.toLowerCase().includes("george") && !v.name.toLowerCase().includes("mark"));
+        if (nonMale) return nonMale;
+    }
+
+    if (personaId === "jarvis") {
+        // Must prioritize UK / British male voices
+        const ukKeywords = ["george", "daniel", "oliver", "arthur", "ryan", "en-gb", "uk", "great britain", "united kingdom", "en_gb"];
+        for (const kw of ukKeywords) {
+            const found = voices.find(v => v.name.toLowerCase().includes(kw) || v.lang.toLowerCase().includes(kw));
+            if (found) return found;
+        }
+    }
+
+    if (personaId === "tony") {
+        // Fast energetic US male voices
+        const usKeywords = ["mark", "david", "guy", "alex", "google us english", "en-us"];
+        for (const kw of usKeywords) {
+            const found = voices.find(v => v.name.toLowerCase().includes(kw));
+            if (found) return found;
+        }
+    }
+
+    // Generic preferred keywords search
+    for (const key of config.preferredKeywords) {
+        const found = voices.find(v => v.name.includes(key) || v.lang.includes(key));
+        if (found) return found;
+    }
+
+    // Absolute fallback
+    return voices.find(v => v.lang.startsWith("en")) || voices[0];
+}
+
+// --- Voice Matrix Calibrator Modal Handlers ---
+function openVoiceModal() {
+    const modal = document.getElementById("voiceModal");
+    if (!modal) return;
+
+    if ('speechSynthesis' in window) {
+        const voices = window.speechSynthesis.getVoices();
+        populateVoiceSelects(voices);
+    }
+
+    modal.classList.remove("hidden");
+    playSciFiSound("activate");
+}
+
+function closeVoiceModal() {
+    const modal = document.getElementById("voiceModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function populateVoiceSelects(voices) {
+    const personas = ["jarvis", "friday", "tony", "ultron"];
+    personas.forEach(pid => {
+        const sel = document.getElementById(`voiceSelect_${pid}`);
+        if (!sel) return;
+
+        sel.innerHTML = "";
+
+        // Default Auto option
+        const autoOpt = document.createElement("option");
+        autoOpt.value = "";
+        autoOpt.textContent = `⚡ [Auto-Detect Optimal]`;
+        sel.appendChild(autoOpt);
+
+        const currentChosen = resolveVoiceForPersona(pid);
+
+        voices.forEach(v => {
+            const opt = document.createElement("option");
+            opt.value = v.voiceURI || v.name;
+            opt.textContent = `${v.name} (${v.lang})`;
+            
+            // If custom selected or auto resolved
+            if (customPersonaVoices[pid] === (v.voiceURI || v.name)) {
+                opt.selected = true;
+            } else if (!customPersonaVoices[pid] && currentChosen && (currentChosen.voiceURI === v.voiceURI || currentChosen.name === v.name)) {
+                // leave autoOpt selected but hint it
+                autoOpt.textContent = `⚡ [Auto: ${v.name}]`;
+            }
+
+            sel.appendChild(opt);
+        });
+
+        if (customPersonaVoices[pid]) {
+            sel.value = customPersonaVoices[pid];
+        } else {
+            sel.value = "";
+        }
+    });
+}
+
+function updatePersonaVoice(personaId, voiceURI) {
+    if (!voiceURI) {
+        delete customPersonaVoices[personaId];
+    } else {
+        customPersonaVoices[personaId] = voiceURI;
+    }
+    try {
+        localStorage.setItem("tony_persona_custom_voices", JSON.stringify(customPersonaVoices));
+    } catch (e) {}
+}
+
+function testPersonaVoice(personaId) {
+    const config = PERSONA_CONFIGS[personaId];
+    if (!config || !('speechSynthesis' in window)) return;
+
+    stopSpeaking();
+
+    const utterance = new SpeechSynthesisUtterance(config.testQuote);
+    utterance.pitch = config.basePitch;
+    utterance.rate = config.baseRate * (userSpeedMultiplier / 1.15);
+
+    const voice = resolveVoiceForPersona(personaId);
+    if (voice) utterance.voice = voice;
+
+    utterance.onstart = () => setStatus("SPEAKING");
+    utterance.onend = () => setStatus("STANDBY");
+    utterance.onerror = () => setStatus("STANDBY");
+
+    window.speechSynthesis.speak(utterance);
+}
+
+function resetVoicesToAuto() {
+    customPersonaVoices = {};
+    try {
+        localStorage.removeItem("tony_persona_custom_voices");
+    } catch (e) {}
+
+    if ('speechSynthesis' in window) {
+        const voices = window.speechSynthesis.getVoices();
+        populateVoiceSelects(voices);
+    }
+    playSciFiSound("activate");
+}
 
 // --- Clock ---
 function updateClock() {
@@ -177,17 +349,8 @@ function processSpeechQueue() {
     utterance.rate = config.baseRate * (userSpeedMultiplier / 1.15);
     utterance.pitch = config.basePitch;
 
-    // Resolve matching voice from browser pool
-    const voices = window.speechSynthesis.getVoices();
-    let chosenVoice = null;
-
-    for (const key of config.voiceMatch) {
-        chosenVoice = voices.find(v => v.name.includes(key) || v.lang.includes(key));
-        if (chosenVoice) break;
-    }
-    if (!chosenVoice) {
-        chosenVoice = voices.find(v => v.lang.startsWith("en"));
-    }
+    // Resolve matching voice from smart resolver
+    const chosenVoice = resolveVoiceForPersona(currentPersona);
     if (chosenVoice) utterance.voice = chosenVoice;
 
     utterance.onstart = () => {
@@ -221,7 +384,10 @@ function speakSentenceImmediate(text) {
 }
 
 if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => {
+        const voices = window.speechSynthesis.getVoices();
+        populateVoiceSelects(voices);
+    };
 }
 
 // --- Sci-Fi Audio Synthesizer (Web Audio API) ---

@@ -44,8 +44,11 @@
                 </button>
             </div>
 
-            <!-- Header Controls: Voice Speed, SFX, Clock -->
+            <!-- Header Controls: Voice Speed, Voice Calibrator, SFX, Clock -->
             <div class="header-controls">
+                <button class="action-pill-btn" onclick="openVoiceModal()" title="Calibrate Persona Voices">
+                    <span>🎙️ CALIBRATE VOICES</span>
+                </button>
                 <div class="control-group">
                     <span class="ctrl-label">SPEED:</span>
                     <select id="speedSelect" onchange="setSpeechRate(this.value)">
@@ -187,6 +190,84 @@
                 </form>
             </section>
         </main>
+    </div>
+
+    <!-- Voice Calibration Modal -->
+    <div class="modal-backdrop" id="voiceModal" onclick="closeVoiceModalOnBackdrop(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span>🎙️ VOICE MATRIX CALIBRATOR</span>
+                    <small>Configure independent distinct voices for each persona</small>
+                </div>
+                <button class="modal-close-btn" onclick="closeVoiceModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Jarvis Voice Config -->
+                <div class="voice-config-row">
+                    <div class="v-persona-info">
+                        <span class="v-avatar">🛡️</span>
+                        <div>
+                            <strong>J.A.R.V.I.S.</strong>
+                            <small>British, calm, sophisticated</small>
+                        </div>
+                    </div>
+                    <div class="v-controls">
+                        <select id="voiceSelect_jarvis" onchange="updatePersonaVoice('jarvis', this.value)"></select>
+                        <button class="test-v-btn" onclick="testPersonaVoice('jarvis')">▶️ Test</button>
+                    </div>
+                </div>
+
+                <!-- Friday Voice Config -->
+                <div class="voice-config-row">
+                    <div class="v-persona-info">
+                        <span class="v-avatar">⚡</span>
+                        <div>
+                            <strong>F.R.I.D.A.Y.</strong>
+                            <small>Warm, conversational, female</small>
+                        </div>
+                    </div>
+                    <div class="v-controls">
+                        <select id="voiceSelect_friday" onchange="updatePersonaVoice('friday', this.value)"></select>
+                        <button class="test-v-btn" onclick="testPersonaVoice('friday')">▶️ Test</button>
+                    </div>
+                </div>
+
+                <!-- Tony Voice Config -->
+                <div class="voice-config-row">
+                    <div class="v-persona-info">
+                        <span class="v-avatar">🌐</span>
+                        <div>
+                            <strong>T.O.N.Y.</strong>
+                            <small>Charismatic, energetic inventor</small>
+                        </div>
+                    </div>
+                    <div class="v-controls">
+                        <select id="voiceSelect_tony" onchange="updatePersonaVoice('tony', this.value)"></select>
+                        <button class="test-v-btn" onclick="testPersonaVoice('tony')">▶️ Test</button>
+                    </div>
+                </div>
+
+                <!-- Ultron Voice Config -->
+                <div class="voice-config-row">
+                    <div class="v-persona-info">
+                        <span class="v-avatar">👁️</span>
+                        <div>
+                            <strong>U.L.T.R.O.N.</strong>
+                            <small>Deep, synthetic, imposing</small>
+                        </div>
+                    </div>
+                    <div class="v-controls">
+                        <select id="voiceSelect_ultron" onchange="updatePersonaVoice('ultron', this.value)"></select>
+                        <button class="test-v-btn" onclick="testPersonaVoice('ultron')">▶️ Test</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="resetVoicesToAuto()">🔄 Auto-Detect Best Voices</button>
+                <button class="modal-btn primary" onclick="closeVoiceModal()">✓ Save & Close</button>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>
