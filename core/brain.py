@@ -126,26 +126,48 @@ class TonyBrain:
                 })
 
             # Send tool output back to model for final speech formulation
-            second_response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=MODEL_NAME,
-                contents=[
-                    types.Content(role="user", parts=[types.Part.from_text(text=user_text)]),
-                    response.candidates[0].content,
-                    types.Content(
-                        role="tool",
-                        parts=[
-                            types.Part.from_function_response(
-                                name=call.name,
-                                response={"result": str(tool_executed[-1]["result"])}
-                            )
-                        ]
+            try:
+                second_response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model=active_model,
+                    contents=[
+                        types.Content(role="user", parts=[types.Part.from_text(text=user_text)]),
+                        response.candidates[0].content,
+                        types.Content(
+                            role="tool",
+                            parts=[
+                                types.Part.from_function_response(
+                                    name=call.name,
+                                    response={"result": str(tool_executed[-1]["result"])}
+                                )
+                            ]
+                        )
+                    ],
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction
                     )
-                ],
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction
                 )
-            )
+            except Exception:
+                second_response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model="gemini-3.6-flash",
+                    contents=[
+                        types.Content(role="user", parts=[types.Part.from_text(text=user_text)]),
+                        response.candidates[0].content,
+                        types.Content(
+                            role="tool",
+                            parts=[
+                                types.Part.from_function_response(
+                                    name=call.name,
+                                    response={"result": str(tool_executed[-1]["result"])}
+                                )
+                            ]
+                        )
+                    ],
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction
+                    )
+                )
             final_text = second_response.text or "Command executed successfully, Boss."
         else:
             final_text = response.text or "I am ready and awaiting your command."
