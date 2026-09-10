@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TONY AI // Codex Tactical & Persona Matrix</title>
+    <title>TONY AI // Codex Super-Intelligence & Tactical Operating Layer</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -15,7 +15,7 @@
             <div class="brand-section">
                 <div class="status-indicator live" id="liveIndicator"></div>
                 <div class="brand-titles">
-                    <span class="logo-text">TONY <span class="version-tag">CODEX v3.0</span></span>
+                    <span class="logo-text">TONY <span class="version-tag">CODEX v3.0 OS</span></span>
                     <span class="sub-text">TACTICAL SUPER-INTELLIGENCE MATRIX</span>
                 </div>
             </div>
@@ -25,12 +25,12 @@
                 <button class="persona-btn" data-persona="jarvis" onclick="switchPersona('jarvis')">
                     <span class="p-icon">🛡️</span>
                     <span class="p-name">J.A.R.V.I.S.</span>
-                    <span class="p-badge">BRITISH</span>
+                    <span class="p-badge">UK MALE</span>
                 </button>
                 <button class="persona-btn" data-persona="friday" onclick="switchPersona('friday')">
                     <span class="p-icon">⚡</span>
                     <span class="p-name">F.R.I.D.A.Y.</span>
-                    <span class="p-badge">IRISH</span>
+                    <span class="p-badge">FEMALE</span>
                 </button>
                 <button class="persona-btn" data-persona="ultron" onclick="switchPersona('ultron')">
                     <span class="p-icon">👁️</span>
@@ -42,13 +42,33 @@
                     <span class="p-name">T.O.N.Y.</span>
                     <span class="p-badge">ARC CORE</span>
                 </button>
+                <button class="persona-btn" data-persona="tactical" onclick="switchPersona('tactical')">
+                    <span class="p-icon">⚔️</span>
+                    <span class="p-name">FUSION</span>
+                    <span class="p-badge">TACTICAL</span>
+                </button>
             </div>
 
-            <!-- Header Controls: Voice Speed, Voice Calibrator, SFX, Clock -->
+            <!-- Header Controls: Sandbox Level, Voice Calibrator, Continuous Mode, Speed, Clock -->
             <div class="header-controls">
+                <div class="control-group">
+                    <span class="ctrl-label">SANDBOX:</span>
+                    <select id="sandboxSelect" onchange="setSecurityMode(this.value)">
+                        <option value="ASSIST" selected>🟢 ASSIST</option>
+                        <option value="SAFE">🔒 SAFE</option>
+                        <option value="AUTONOMOUS">⚡ AUTONOMOUS</option>
+                        <option value="LOCKDOWN">🛑 LOCKDOWN</option>
+                    </select>
+                </div>
+
                 <button class="action-pill-btn" onclick="openVoiceModal()" title="Calibrate Persona Voices">
                     <span>🎙️ CALIBRATE VOICES</span>
                 </button>
+
+                <button class="action-pill-btn toggle-listen-btn" id="continuousBtn" onclick="toggleContinuousMode()" title="Toggle Continuous Hands-Free Speech">
+                    <span id="continuousLabel">👂 CONVERSATION: OFF</span>
+                </button>
+
                 <div class="control-group">
                     <span class="ctrl-label">SPEED:</span>
                     <select id="speedSelect" onchange="setSpeechRate(this.value)">
@@ -58,12 +78,50 @@
                         <option value="1.5">1.5x (Hyper)</option>
                     </select>
                 </div>
+
                 <button class="icon-toggle-btn" id="voiceToggleBtn" onclick="toggleVoiceOutput()" title="Toggle Voice Speech">
                     <span id="voiceIcon">🔊</span>
                 </button>
+
                 <div class="system-time" id="clock">00:00:00</div>
             </div>
         </header>
+
+        <!-- Tactical Module Navigation Bar -->
+        <nav class="tactical-nav">
+            <button class="nav-tab-btn active" data-tab="chat" onclick="switchTacticalTab('chat')">
+                <span class="tab-icon">💬</span>
+                <span class="tab-name">CODEX CHAT</span>
+            </button>
+            <button class="nav-tab-btn" data-tab="memory" onclick="switchTacticalTab('memory')">
+                <span class="tab-icon">🧠</span>
+                <span class="tab-name">MEMORY CORE</span>
+            </button>
+            <button class="nav-tab-btn" data-tab="missions" onclick="switchTacticalTab('missions')">
+                <span class="tab-icon">🛰️</span>
+                <span class="tab-name">MISSION CONTROL</span>
+            </button>
+            <button class="nav-tab-btn" data-tab="security" onclick="switchTacticalTab('security')">
+                <span class="tab-icon">🛡️</span>
+                <span class="tab-name">SECURITY & INTEGRITY</span>
+            </button>
+            <button class="nav-tab-btn" data-tab="developer" onclick="switchTacticalTab('developer')">
+                <span class="tab-icon">📱</span>
+                <span class="tab-name">DEV & ANDROID CORE</span>
+            </button>
+            <button class="nav-tab-btn" data-tab="workflows" onclick="switchTacticalTab('workflows')">
+                <span class="tab-icon">⚡</span>
+                <span class="tab-name">WORKFLOWS & MACROS</span>
+            </button>
+            <button class="nav-tab-btn" data-tab="research" onclick="switchTacticalTab('research')">
+                <span class="tab-icon">🔍</span>
+                <span class="tab-name">DEEP RESEARCH</span>
+            </button>
+            <button class="nav-tab-btn" data-tab="telemetry" onclick="switchTacticalTab('telemetry')">
+                <span class="tab-icon">📊</span>
+                <span class="tab-name">DEEP TELEMETRY</span>
+            </button>
+        </nav>
 
         <!-- Main Codex Grid Layout -->
         <main class="codex-grid">
@@ -76,7 +134,7 @@
                         <span class="core-tag" id="coreStatusTag">ONLINE</span>
                     </div>
                     <div class="canvas-wrapper">
-                        <canvas id="arcCanvas" width="300" height="300"></canvas>
+                        <canvas id="arcCanvas" width="280" height="280"></canvas>
                         <div class="core-status" id="coreStatus">STANDBY</div>
                     </div>
                 </div>
@@ -93,107 +151,342 @@
                     </button>
                 </div>
 
-                <!-- Hardware & Telemetry -->
+                <!-- Real-Time Hardware Telemetry -->
                 <div class="telemetry-box">
                     <div class="section-title">
                         <span>SYSTEM TELEMETRY</span>
                         <span class="tag">REALTIME</span>
                     </div>
-                    <div class="telemetry-item">
-                        <div class="tele-label"><span>CPU UTILIZATION</span><span id="cpu-val">0%</span></div>
-                        <div class="progress-bar"><div class="fill" id="cpu-fill" style="width: 0%"></div></div>
-                    </div>
-                    <div class="telemetry-item">
-                        <div class="tele-label"><span>MEMORY ALLOCATION</span><span id="ram-val">0%</span></div>
-                        <div class="progress-bar"><div class="fill" id="ram-fill" style="width: 0%"></div></div>
-                    </div>
-                    <div class="telemetry-item">
-                        <div class="tele-label"><span>POWER GRID</span><span id="battery-val">100%</span></div>
-                        <div class="progress-bar"><div class="fill green" id="battery-fill" style="width: 100%"></div></div>
+                    <div class="telemetry-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span>CPU USAGE</span>
+                                <strong id="cpu-val">0%</strong>
+                            </div>
+                            <div class="meter-bar"><div class="meter-fill" id="cpu-fill" style="width: 0%;"></div></div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span>RAM MEMORY</span>
+                                <strong id="ram-val">0%</strong>
+                            </div>
+                            <div class="meter-bar"><div class="meter-fill" id="ram-fill" style="width: 0%;"></div></div>
+                        </div>
+
+                        <div class="metric-row">
+                            <span class="m-label">DISK USAGE:</span>
+                            <span class="m-val" id="disk-val">--%</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="m-label">NETWORK I/O:</span>
+                            <span class="m-val" id="net-val">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="m-label">POWER / BATTERY:</span>
+                            <span class="m-val" id="battery-val">AC Power</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Quick Tactical Arsenal -->
+                <!-- Quick Tactical Arsenal Buttons -->
                 <div class="arsenal-box">
                     <div class="section-title">
-                        <span>TACTICAL ARSENAL</span>
-                        <span class="tag">MACROS</span>
+                        <span>TACTICAL SHORTCUTS</span>
                     </div>
-                    <div class="action-grid">
-                        <button class="action-btn" onclick="triggerAction('diagnostics')">⚡ SYSTEM SCAN</button>
-                        <button class="action-btn" onclick="triggerAction('screen')">👁️ SCREEN SCAN</button>
-                        <button class="action-btn" onclick="triggerAction('weather')">🌤️ WEATHER</button>
-                        <button class="action-btn" onclick="triggerAction('status')">🛡️ FULL STATUS</button>
-                        <button class="action-btn" onclick="triggerAction('volume_up')">🔊 VOL UP</button>
-                        <button class="action-btn" onclick="triggerAction('calc')">🧮 CALCULATOR</button>
+                    <div class="arsenal-grid">
+                        <button class="arsenal-btn" onclick="sendQuickPrompt('What do you remember about me?')">
+                            <span>🧠</span> My Memory
+                        </button>
+                        <button class="arsenal-btn" onclick="sendQuickPrompt('Why is my computer slow? Analyze diagnostics.')">
+                            <span>⚡</span> Slow PC Check
+                        </button>
+                        <button class="arsenal-btn" onclick="sendQuickPrompt('What is on my screen? Read any visible error.')">
+                            <span>👁️</span> Screen Scan
+                        </button>
+                        <button class="arsenal-btn" onclick="switchTacticalTab('missions')">
+                            <span>🛰️</span> Missions
+                        </button>
                     </div>
                 </div>
             </aside>
 
-            <!-- Right Panel: Codex Chat & Code Terminal -->
-            <section class="panel panel-right chat-panel">
-                <div class="chat-header">
-                    <div class="chat-title-info">
-                        <span class="chat-icon">💬</span>
-                        <h3 id="chatPersonaHeading">CODEX CHAT // T.O.N.Y.</h3>
-                        <span class="latency-badge" id="latencyBadge">LATENCY: 0.28s</span>
+            <!-- Center Panel: Dynamic Module Views -->
+            <section class="panel panel-center">
+                <!-- VIEW 1: CODEX CHAT VIEW -->
+                <div class="tab-view active" id="view-chat">
+                    <div class="chat-header">
+                        <div class="chat-info">
+                            <span class="chat-title" id="chatPersonaHeading">CODEX CHAT // T.O.N.Y.</span>
+                            <span class="chat-status" id="connectionStatus">● SECURE WEBSOCKET LINK</span>
+                        </div>
+                        <div class="chat-actions">
+                            <button class="action-btn" onclick="clearChat()" title="Clear Terminal Log">CLEAR</button>
+                            <button class="action-btn" onclick="stopSpeaking()" title="Stop Voice Speech">STOP AUDIO</button>
+                        </div>
                     </div>
-                    <div class="chat-actions">
-                        <button class="chat-tool-btn" onclick="clearChatThread()" title="Clear Chat Thread">🗑️ CLEAR</button>
-                        <button class="chat-tool-btn" onclick="stopSpeaking()" title="Stop Voice Speech">⏹️ STOP SPEECH</button>
-                    </div>
-                </div>
 
-                <!-- Chat Feed Stream -->
-                <div class="chat-feed" id="chatFeed">
-                    <div class="message-card tony-msg">
-                        <div class="msg-header">
-                            <div class="sender-info">
-                                <span class="sender-avatar">🌐</span>
-                                <span class="sender-name">T.O.N.Y. CORE</span>
+                    <div class="messages-container" id="messagesContainer">
+                        <div class="message tony">
+                            <span class="sender">T.O.N.Y. // ARC CORE</span>
+                            <div class="content">All systems online. Cognitive memory, computer control, vision scanner, and multi-persona matrix are primed. How can I assist you, Boss?</div>
+                            <span class="time">System Initialized</span>
+                        </div>
+                    </div>
+
+                    <!-- Input Bar -->
+                    <div class="input-panel">
+                        <form id="chatForm" onsubmit="handleFormSubmit(event)">
+                            <div class="input-wrapper">
+                                <span class="prompt-symbol">></span>
+                                <input type="text" id="userInput" placeholder="Enter command or speak (e.g. 'Start development', 'Why is my PC slow', 'What do you remember')..." autocomplete="off">
+                                <button type="submit" class="send-button" id="sendBtn">
+                                    <span>TRANSMIT</span>
+                                </button>
                             </div>
-                            <span class="msg-time" id="initTime">INITIALIZED</span>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: MEMORY CORE VIEW -->
+                <div class="tab-view" id="view-memory">
+                    <div class="view-header">
+                        <div>
+                            <h2>🧠 PERSISTENT COGNITIVE MEMORY MATRIX</h2>
+                            <p class="view-sub">Long-term facts, user preferences, project knowledge, and encrypted local storage</p>
                         </div>
-                        <div class="msg-body markdown-content">
-                            <p>Good day, sir. All core subsystems and tactical cognitive models are online and operating at peak capacity. Select your preferred persona above (<strong>J.A.R.V.I.S.</strong>, <strong>F.R.I.D.A.Y.</strong>, <strong>U.L.T.R.O.N.</strong>, or <strong>T.O.N.Y.</strong>) and give your orders.</p>
+                        <div class="view-header-btns">
+                            <button class="action-pill-btn" onclick="exportMemoryData()">💾 Export JSON</button>
+                            <button class="action-pill-btn" onclick="triggerImportMemory()">📥 Import</button>
+                            <input type="file" id="memoryImportFile" style="display:none" onchange="handleMemoryFile(this)">
                         </div>
-                        <div class="msg-actions">
-                            <button class="msg-btn" onclick="speakLastResponse(this)">🔊 Speak</button>
-                            <button class="msg-btn" onclick="copyMessageText(this)">📋 Copy</button>
+                    </div>
+
+                    <!-- Add Memory Form -->
+                    <div class="card add-memory-card">
+                        <h3>+ Add Permanent Knowledge / Preference</h3>
+                        <div class="add-memory-grid">
+                            <input type="text" id="newMemContent" placeholder="e.g. 'User prefers Kotlin and Jetpack Compose for Android development'" class="form-input">
+                            <select id="newMemCategory" class="form-select">
+                                <option value="preference">Preference</option>
+                                <option value="fact" selected>Fact</option>
+                                <option value="project">Project</option>
+                                <option value="habit">Habit</option>
+                            </select>
+                            <select id="newMemImportance" class="form-select">
+                                <option value="5">⭐⭐⭐⭐⭐ Critical (5)</option>
+                                <option value="4">⭐⭐⭐⭐ High (4)</option>
+                                <option value="3" selected>⭐⭐⭐ Medium (3)</option>
+                                <option value="2">⭐⭐ Low (2)</option>
+                            </select>
+                            <button class="modal-btn primary" onclick="addCustomMemory()">SAVE MEMORY</button>
+                        </div>
+                    </div>
+
+                    <!-- Memory List Cards -->
+                    <div class="memory-list-container" id="memoryListContainer">
+                        <div class="empty-state">Loading cognitive memory entries...</div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: MISSION CONTROL VIEW -->
+                <div class="tab-view" id="view-missions">
+                    <div class="view-header">
+                        <div>
+                            <h2>🛰️ TACTICAL MISSION TASK SYSTEM</h2>
+                            <p class="view-sub">Autonomous multi-step workflows, automated build pipelines, and health missions</p>
+                        </div>
+                    </div>
+
+                    <div class="missions-grid" id="missionsGrid">
+                        <!-- Loaded dynamically -->
+                    </div>
+
+                    <!-- Active Mission Execution Monitor -->
+                    <div class="card mission-monitor-card" id="activeMissionCard" style="display:none;">
+                        <div class="card-header">
+                            <h3 id="activeMissionTitle">▶ ACTIVE MISSION IN PROGRESS</h3>
+                            <span class="badge running" id="activeMissionStatus">RUNNING</span>
+                        </div>
+                        <div class="mission-steps-list" id="missionStepsList"></div>
+                        <div class="terminal-log-box" id="missionLogsBox"></div>
+                    </div>
+                </div>
+
+                <!-- VIEW 4: SECURITY & INTEGRITY VIEW -->
+                <div class="tab-view" id="view-security">
+                    <div class="view-header">
+                        <div>
+                            <h2>🛡️ SECURITY & INTEGRITY CENTER</h2>
+                            <p class="view-sub">Real-time threat assessment, environment integrity, sandbox controls & audit logging</p>
+                        </div>
+                        <button class="modal-btn primary" onclick="refreshSecurityAudit()">🔄 Run Integrity Audit</button>
+                    </div>
+
+                    <div class="security-dashboard-grid">
+                        <div class="card security-status-card">
+                            <span class="sec-label">CURRENT THREAT LEVEL</span>
+                            <div class="threat-display low" id="threatLevelDisplay">LOW (NOMINAL)</div>
+                            <small id="threatDetails">Environment integrity verified. Sandbox active.</small>
+                        </div>
+
+                        <div class="card security-mode-card">
+                            <span class="sec-label">ACTIVE SANDBOX POLICY</span>
+                            <div class="sandbox-buttons">
+                                <button class="mode-pill" data-mode="ASSIST" onclick="setSecurityMode('ASSIST')">🟢 ASSIST</button>
+                                <button class="mode-pill" data-mode="SAFE" onclick="setSecurityMode('SAFE')">🔒 SAFE</button>
+                                <button class="mode-pill" data-mode="AUTONOMOUS" onclick="setSecurityMode('AUTONOMOUS')">⚡ AUTONOMOUS</button>
+                                <button class="mode-pill" data-mode="LOCKDOWN" onclick="setSecurityMode('LOCKDOWN')">🛑 LOCKDOWN</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Audit Logs Table -->
+                    <div class="card audit-card">
+                        <h3>SECURITY AUDIT TRAIL</h3>
+                        <div class="table-container">
+                            <table class="hud-table">
+                                <thead>
+                                    <tr>
+                                        <th>TIME</th>
+                                        <th>ACTION</th>
+                                        <th>TARGET</th>
+                                        <th>STATUS</th>
+                                        <th>LEVEL</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="auditTableBody">
+                                    <tr><td colspan="5">Loading audit records...</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- Prompt Suggestion Chips -->
-                <div class="prompt-chips">
-                    <span class="chip-label">QUICK PROMPTS:</span>
-                    <button class="chip-btn" onclick="sendQuickPrompt('Give me a full status report on our systems and Arc Reactor.')">⚡ Status Report</button>
-                    <button class="chip-btn" onclick="sendQuickPrompt('What is the weather in London right now?')">🌤️ Weather</button>
-                    <button class="chip-btn" onclick="sendQuickPrompt('Write a Python function to optimize matrix multiplication.')">💻 Write Python Code</button>
-                    <button class="chip-btn" onclick="sendQuickPrompt('What is your strategic tactical outlook for today?')">🎯 Strategic Outlook</button>
+                <!-- VIEW 5: DEV & ANDROID CORE VIEW -->
+                <div class="tab-view" id="view-developer">
+                    <div class="view-header">
+                        <div>
+                            <h2>📱 DEVELOPER & ANDROID CONTROL CENTER</h2>
+                            <p class="view-sub">ADB diagnostics, logcat error streaming, git operations & crash stack trace analyzer</p>
+                        </div>
+                    </div>
+
+                    <div class="dev-grid">
+                        <!-- Android ADB Panel -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🤖 ANDROID ADB STATUS</h3>
+                                <button class="action-btn" onclick="fetchAdbDevices()">Scan Devices</button>
+                            </div>
+                            <div id="adbDeviceList" class="info-box">Scanning ADB interface...</div>
+                            <div class="card-header" style="margin-top:12px;">
+                                <h4>Logcat Error Stream</h4>
+                                <button class="action-btn" onclick="fetchLogcatErrors()">Fetch Errors</button>
+                            </div>
+                            <div class="terminal-log-box" id="logcatStreamBox">No recent fatal exceptions.</div>
+                        </div>
+
+                        <!-- Git & Crash Analyzer -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🔀 GIT CODEBASE STATUS</h3>
+                                <button class="action-btn" onclick="fetchGitStatus()">Refresh Git</button>
+                            </div>
+                            <div id="gitStatusBox" class="info-box">Branch: main (Clean)</div>
+
+                            <div class="card-header" style="margin-top:12px;">
+                                <h4>Crash Stack Trace Analyzer</h4>
+                            </div>
+                            <textarea id="crashInput" class="form-textarea" placeholder="Paste crash stack trace or NullPointerException here..."></textarea>
+                            <button class="modal-btn primary" onclick="analyzeCrashTrace()">ANALYZE CRASH</button>
+                            <div id="crashResultBox" class="info-box" style="margin-top:8px; display:none;"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Codex Input Console -->
-                <form class="codex-input-container" id="commandForm" onsubmit="handleCommandSubmit(event)">
-                    <div class="input-wrapper">
-                        <textarea id="commandInput" placeholder="Enter command or question for Tony / Jarvis / Friday / Ultron (Press Enter to transmit, Shift+Enter for new line)..." rows="1" onkeydown="handleInputKeydown(event)"></textarea>
+                <!-- VIEW 6: WORKFLOWS & MACROS VIEW -->
+                <div class="tab-view" id="view-workflows">
+                    <div class="view-header">
+                        <div>
+                            <h2>⚡ AUTOMATIONS & WORKFLOW MACROS</h2>
+                            <p class="view-sub">Trigger multi-app launch routines and developer workspace setups</p>
+                        </div>
                     </div>
-                    <div class="input-actions">
-                        <button type="button" class="action-icon-btn" onclick="toggleVoiceInput()" title="Voice Input">
-                            <span id="inputMicIcon">🎙️</span>
-                        </button>
-                        <button type="submit" class="send-btn" id="sendBtn">
-                            <span>TRANSMIT</span>
-                            <span class="send-arrow">➔</span>
-                        </button>
+
+                    <div class="workflows-list" id="workflowsList">
+                        <div class="card workflow-card">
+                            <div class="wf-info">
+                                <h3>🚀 Start Development Environment</h3>
+                                <p>Launches VS Code, Developer Chrome, and audits system resource availability.</p>
+                            </div>
+                            <button class="modal-btn primary" onclick="triggerWorkflow('start_development')">▶ EXECUTE</button>
+                        </div>
+
+                        <div class="card workflow-card">
+                            <div class="wf-info">
+                                <h3>🧹 Clean Workspace & Verify Health</h3>
+                                <p>Audits disk storage, memory headroom, and tests workspace integrity.</p>
+                            </div>
+                            <button class="modal-btn primary" onclick="triggerWorkflow('clean_temp_workspace')">▶ EXECUTE</button>
+                        </div>
                     </div>
-                </form>
+                </div>
+
+                <!-- VIEW 7: DEEP RESEARCH VIEW -->
+                <div class="tab-view" id="view-research">
+                    <div class="view-header">
+                        <div>
+                            <h2>🔍 AUTONOMOUS CODEX RESEARCH ENGINE</h2>
+                            <p class="view-sub">Multi-source web synthesis, architectural evaluations & grounded citations</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="research-input-row">
+                            <input type="text" id="researchTopicInput" placeholder="Enter research query (e.g. 'Best practices for Android NDK C++ interop')..." class="form-input">
+                            <button class="modal-btn primary" onclick="executeResearchQuery()">START RESEARCH</button>
+                        </div>
+                    </div>
+
+                    <div class="card research-report-card" id="researchReportCard" style="display:none;">
+                        <div class="markdown-body" id="researchReportContent"></div>
+                    </div>
+                </div>
+
+                <!-- VIEW 8: DEEP TELEMETRY VIEW -->
+                <div class="tab-view" id="view-telemetry">
+                    <div class="view-header">
+                        <div>
+                            <h2>📊 ADVANCED HARDWARE & PROCESS TELEMETRY</h2>
+                            <p class="view-sub">Real-time bottleneck analysis, process hierarchy, and system optimization</p>
+                        </div>
+                        <button class="modal-btn primary" onclick="runSlowPCDiagnosis()">⚡ Diagnose Bottlenecks</button>
+                    </div>
+
+                    <div class="deep-telemetry-grid">
+                        <div class="card" id="slowPcReportCard" style="grid-column: 1 / -1; display:none;">
+                            <h3>⚡ BOTTLENECK DIAGNOSTIC REPORT</h3>
+                            <div id="slowPcContent" class="info-box"></div>
+                        </div>
+
+                        <div class="card">
+                            <h3>TOP CPU CONSUMING PROCESSES</h3>
+                            <div class="terminal-log-box" id="topCpuProcsBox">Scanning processes...</div>
+                        </div>
+
+                        <div class="card">
+                            <h3>TOP MEMORY CONSUMING PROCESSES</h3>
+                            <div class="terminal-log-box" id="topRamProcsBox">Scanning processes...</div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
 
-    <!-- Voice Calibration Modal -->
-    <div class="modal-backdrop" id="voiceModal" onclick="closeVoiceModalOnBackdrop(event)">
+    <!-- Voice Matrix Calibrator Modal -->
+    <div class="modal-backdrop hidden" id="voiceModal">
         <div class="modal-card">
             <div class="modal-header">
                 <div class="modal-title">
@@ -209,7 +502,7 @@
                         <span class="v-avatar">🛡️</span>
                         <div>
                             <strong>J.A.R.V.I.S.</strong>
-                            <small>British, calm, sophisticated</small>
+                            <small>British, calm, baritone</small>
                         </div>
                     </div>
                     <div class="v-controls">
@@ -266,6 +559,25 @@
             <div class="modal-footer">
                 <button class="modal-btn secondary" onclick="resetVoicesToAuto()">🔄 Auto-Detect Best Voices</button>
                 <button class="modal-btn primary" onclick="closeVoiceModal()">✓ Save & Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dangerous Action Confirmation Modal -->
+    <div class="modal-backdrop hidden" id="confirmModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span style="color:#ff3344;">⚠️ SECURITY AUTHORIZATION REQUIRED</span>
+                    <small>Potentially destructive computer operation requested</small>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalText">Operation description...</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="resolveConfirmModal(false)">✕ DENY & BLOCK</button>
+                <button class="modal-btn primary" style="background:#ff3344; border-color:#ff3344;" onclick="resolveConfirmModal(true)">✓ AUTHORIZE ACTION</button>
             </div>
         </div>
     </div>
