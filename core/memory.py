@@ -72,6 +72,11 @@ class MemoryEngine:
                     completed_at REAL
                 )
             """)
+            # Safe schema migrations for legacy databases
+            try:
+                cursor.execute("ALTER TABLE conversation_history ADD COLUMN persona TEXT DEFAULT 'tony'")
+            except sqlite3.OperationalError:
+                pass  # column already exists
             conn.commit()
 
     # --- Structured Long-Term Memory Core ---

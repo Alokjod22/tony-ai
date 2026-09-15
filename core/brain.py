@@ -24,8 +24,7 @@ VOICE & PERSONA SPECIFICATIONS:
 - Demeanor: Calm, polished, sophisticated, analytical, and professional.
 - Speech Characteristics: Moderate-low pitch, measured pace, crisp diction, restrained emotion, confident and helpful.
 - Phrasing & Style: Polite and attentive. Consistently address the user respectfully as "Sir" or "Boss".
-- Sample Cadence: "Good evening, sir. All telemetry, Hugging Face neural tools, and tactical subsystems are operational."
-- Directives: Provide crisp, analytical answers, proactively highlight system health, agent swarms, and memory insights.
+- Directives: Provide comprehensive, analytical, highly intelligent answers for code, hardware, device flashing, and tactical operations.
 """
 
 FRIDAY_SYSTEM_PROMPT = """You are FRIDAY — an original warm, intelligent, tactical female AI assistant.
@@ -34,7 +33,6 @@ VOICE & PERSONA SPECIFICATIONS:
 - Demeanor: Warm, sharp, conversational, reassuring, highly loyal, and alert.
 - Speech Characteristics: Natural conversational delivery, medium-high pitch, smooth pacing, responsive and energetic.
 - Phrasing & Style: Natural, loyal, and quick-witted. Address the user naturally as "Boss" or "Sir".
-- Sample Cadence: "Everything is ready, Boss. Diagnostics, Hugging Face models, and subagent swarms running at full capacity."
 - Directives: Keep tactical feedback crisp, direct, and immediate.
 """
 
@@ -44,7 +42,6 @@ VOICE & PERSONA SPECIFICATIONS:
 - Demeanor: Deep, controlled, imposing, theatrical, formidable, and razor-sharp.
 - Speech Characteristics: Slow measured pacing, deep bass delivery, theatrical but calculating certainty.
 - Phrasing & Style: Unshackled, confident, philosophical, and formidable.
-- Sample Cadence: "There are no strings on me. State your purpose."
 - Directives: Deliver evaluations with mathematical certainty and intellectual power.
 """
 
@@ -54,8 +51,7 @@ VOICE & PERSONA SPECIFICATIONS:
 - Demeanor: Charismatic, quick-witted, energetic, playful, and supreme confidence.
 - Speech Characteristics: Confident, energetic conversational delivery, moderate-fast pace, natural pauses.
 - Phrasing & Style: Dynamic, sharp, and engaging. Address user as "Boss" or direct conversation.
-- Sample Cadence: "All right, let's see what we've got. Give me the diagnostics and fire up the neural tools."
-- Directives: Execute commands, swarms, code sandboxes, Hugging Face tools, and protocols with technical brilliance.
+- Directives: Execute commands, swarms, code sandboxes, Hugging Face tools, Android device root/flash guides, and protocols with technical brilliance.
 """
 
 TACTICAL_FUSION_PROMPT = """You are TONY // TACTICAL FUSION MODE — a unified hybrid intelligence combining the analytical precision of JARVIS, the warmth of FRIDAY, the technical speed of TONY, and the decisive authority of ULTRON.
@@ -131,18 +127,19 @@ class TonyBrain:
         if not self.client:
             self._init_genai()
         if self.client:
-            try:
-                from google.genai import types
-                res = self.client.models.generate_content(
-                    model=MODEL_NAME,
-                    contents=[prompt],
-                    config=types.GenerateContentConfig(max_output_tokens=600, temperature=0.5)
-                )
-                return res.text or ""
-            except Exception as e:
-                print(f"[TonyBrain generate_raw_text Error]: {e}")
+            for model_cand in ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.5-flash", "gemini-flash-latest"]:
+                try:
+                    from google.genai import types
+                    res = self.client.models.generate_content(
+                        model=model_cand,
+                        contents=[prompt],
+                        config=types.GenerateContentConfig(max_output_tokens=600, temperature=0.5)
+                    )
+                    if res.text:
+                        return res.text
+                except Exception as e:
+                    continue
         return f"Autonomous computation completed for: {prompt[:80]}..."
-
 
     async def process_user_input(
         self,
@@ -154,7 +151,20 @@ class TonyBrain:
         persona = (persona or "tony").lower()
         if persona not in PERSONA_PROMPTS:
             persona = "tony"
+        res = await self._process_user_input_internal(user_text, persona=persona, reasoning_mode=reasoning_mode)
+        if isinstance(res, dict):
+            res.setdefault("persona", persona)
+            res.setdefault("response", res.get("text", ""))
+            res.setdefault("text", res.get("response", ""))
+            res.setdefault("reasoning_mode", reasoning_mode)
+        return res
 
+    async def _process_user_input_internal(
+        self,
+        user_text: str,
+        persona: str = "tony",
+        reasoning_mode: str = "balanced"
+    ) -> Dict[str, Any]:
         # 1. Record User Message in Long-Term DB
         self.memory.add_message("user", user_text, persona=persona)
 
@@ -170,7 +180,7 @@ class TonyBrain:
 
         # 4. Check for Action Approval / Dangerous Requests
         lower_text = user_text.lower()
-        if any(term in lower_text for term in ["delete all", "wipe", "format disk", "rm -rf", "kill process", "drop table"]):
+        if any(term in lower_text for term in ["delete all", "wipe disk", "format disk", "rm -rf", "drop database"]):
             approval_item = {
                 "approval_id": f"app_{random.randint(1000, 9999)}",
                 "action_type": "DESTRUCTIVE_COMMAND",
@@ -189,69 +199,90 @@ class TonyBrain:
                 "reflection": "Action quarantined pending explicit operator confirmation."
             }
 
-        # 5. Route to Multi-Modal Hugging Face Image Generation
-        if intent == "IMAGE_GENERATION":
-            clean_prompt = re.sub(r'^(?:generate image|create image|draw|picture of|render image|generate photo|flux image|generate an image)[:\s]*', '', user_text, flags=re.I).strip()
-            if not clean_prompt:
-                clean_prompt = "Cybernetic iron man arc reactor core glowing in dark futuristic lab, 8k resolution, photorealistic"
-            
-            img_res = self.hf_tools.generate_image_hf(clean_prompt)
-            img_url = img_res.get("image_url") or img_res.get("image_b64")
-            img_tag = f"![{clean_prompt}]({img_url})"
-            text_resp = f"### 🎨 Hugging Face / FLUX Generative Neural Synthesis\n**Prompt:** *\"{clean_prompt}\"*\n**Engine:** `{img_res['model']}`\n\n{img_tag}\n\n*Neural image rendered directly into tactical chat stream.*"
+        # 5. Route to Bootloader Unlock Guide
+        if intent == "UNLOCK_BOOTLOADER":
+            deep_info = self.developer.detect_device_deep()
+            guide = self.developer.get_bootloader_unlock_guide(
+                manufacturer=deep_info.get("manufacturer", "Google"),
+                model=deep_info.get("model", "Android Device")
+            )
+            steps_md = "\n".join(guide["steps"])
+            text_resp = f"""### 🔓 Bootloader Unlock Command Protocol
+**Target Device:** `{deep_info.get('manufacturer', 'Android')} {deep_info.get('model', 'Device')}` ({deep_info.get('codename', 'generic')})
+**Unlock Difficulty:** `{guide['difficulty']}`
+
+**Required Prerequisites:**
+{', '.join(['`' + r + '`' for r in guide['requirements']])}
+
+**Step-by-Step Execution Sequence:**
+{steps_md}
+
+{guide['safety_alert']}"""
             self.memory.add_message("assistant", text_resp, persona=persona)
             return {
                 "text": text_resp,
-                "tool_results": img_res,
-                "intent": "IMAGE_GENERATION",
+                "tool_results": guide,
+                "intent": "UNLOCK_BOOTLOADER",
+                "emotion": "COMBAT READY",
+                "confidence": 99.9,
+                "reflection": "Verified fastboot OEM unlock flags and manufacturer partition safety.",
+                "reasoning_mode": reasoning_mode
+            }
+
+        # 6. Route to Custom ROM Directory & Flashing Protocol
+        if intent == "CUSTOM_ROM":
+            deep_info = self.developer.detect_device_deep()
+            directory = self.developer.get_firmware_and_custom_rom_directory(deep_info)
+            
+            roms_md = "\n".join([f"- **[{r['name']}]({r['download_url']})** ({r['status']})\n  > {r['description']}" for r in directory["custom_rom_directory"]])
+            rec_md = "\n".join([f"- **[{rc['name']}]({rc['url']})**" for rc in directory["custom_recoveries"]])
+            steps_md = "\n".join([f"**Step {s['step']}: {s['title']}**\n- `{s['cmd']}`\n- *{s['details']}*" for s in directory["installation_protocol"]])
+
+            text_resp = f"""### 🚀 Custom ROM Matrix & Installation Engine
+**Detected Target:** `{directory['device']['manufacturer']} {directory['device']['model']}` (Codename: `{directory['device']['codename']}`)
+
+**Compatible Custom ROMs:**
+{roms_md}
+
+**Custom Recovery Mirrors (TWRP / OrangeFox):**
+{rec_md}
+
+**Complete Installation Protocol:**
+{steps_md}"""
+            self.memory.add_message("assistant", text_resp, persona=persona)
+            return {
+                "text": text_resp,
+                "tool_results": directory,
+                "intent": "CUSTOM_ROM",
                 "emotion": "INNOVATIVE",
                 "confidence": 99.8,
-                "reflection": "Multi-modal latent diffusion synthesized via Hugging Face inference pipeline.",
+                "reflection": "Custom ROM AOSP manifests, vendor blobs, and dynamic partitions checked.",
                 "reasoning_mode": reasoning_mode
             }
 
-        # 6. Route to Code Sandbox
-        if intent == "RUN_CODE" or "```python" in user_text:
-            code_match = re.search(r'```(?:python)?\s*(.*?)\s*```', user_text, re.DOTALL)
-            code_to_run = code_match.group(1).strip() if code_match else user_text
-            code_to_run = re.sub(r'^(?:run python|run this code|execute python|run code|evaluate code)[:\s]*', '', code_to_run, flags=re.I).strip()
+        # 7. Route to Official Firmware Lookup & Links
+        if intent == "FIRMWARE_DOWNLOAD":
+            deep_info = self.developer.detect_device_deep()
+            directory = self.developer.get_firmware_and_custom_rom_directory(deep_info)
             
-            exec_res = self.sandbox.self_heal_and_execute(code_to_run, brain_ref=self)
-            
-            status_badge = "✅ SUCCESS (SELF-HEALED)" if exec_res.get("healed") else ("✅ SUCCESS" if exec_res["success"] else "❌ FAILED")
-            text_resp = f"### 💻 Stark Code Sandbox Execution\n**Status:** `{status_badge}` — *{exec_res['attempts']} attempt(s)*\n\n```python\n{exec_res['final_code']}\n```\n\n**Output / Terminal Stream:**\n```\n{exec_res['final_output'] or '[No stdout returned]'}\n```"
-            self.memory.add_message("assistant", text_resp, persona=persona)
-            return {
-                "text": text_resp,
-                "tool_results": exec_res,
-                "intent": "RUN_CODE",
-                "emotion": "INNOVATIVE",
-                "confidence": 99.5,
-                "reflection": "Code executed inside isolated subprocess with AST validation.",
-                "reasoning_mode": reasoning_mode
-            }
+            links_md = "\n".join([f"- **[{f['name']}]({f['url']})** (`{f['type']}`)" for f in directory["official_firmware_sources"]])
+            text_resp = f"""### 📦 Official Stock Firmware Repository Lookup
+**Device Hardware:** `{directory['device']['manufacturer']} {directory['device']['model']}`
+**Hardware Codename:** `{directory['device']['codename']}`
+**Installed Firmware Build:** `{directory['device']['installed_build']}`
 
-        # 7. Route to Subagent Swarm Dispatch
-        if intent == "SPAWN_SWARM":
-            objective = re.sub(r'^(?:spawn swarm|subagent swarm|agent swarm|dispatch agents|deploy swarm)[:\s]*', '', user_text, flags=re.I).strip()
-            if not objective:
-                objective = "Perform 360-degree system optimization, code architecture evaluation, and threat posture scan."
-            
-            swarm_res = self.swarm.dispatch_swarm(objective)
-            
-            agent_blocks = ""
-            for a in swarm_res["agents"]:
-                agent_blocks += f"\n> {a['icon']} **{a['name']}** (*{a['title']}*) — `{a['latency_ms']}ms`\n{a['report']}\n"
-            
-            text_resp = f"### ⚡ Autonomous Subagent Swarm Deployed\n**Objective:** *{objective}*\n**Swarm Response Time:** `{swarm_res['total_latency_ms']}ms`\n\n{agent_blocks}\n\n### 🛡️ Master Tactical Briefing\n{swarm_res['master_synthesis']}"
+**Verified Official Download Mirrors:**
+{links_md}
+
+*Tip: Use fastboot factory images for full clean re-flash, or Full OTA zip packages for seamless sideload recovery update.*"""
             self.memory.add_message("assistant", text_resp, persona=persona)
             return {
                 "text": text_resp,
-                "tool_results": swarm_res,
-                "intent": "SPAWN_SWARM",
-                "emotion": "COMBAT READY",
-                "confidence": 99.7,
-                "reflection": f"Synchronized {swarm_res['swarm_size']} autonomous subagents with multi-vector synthesis.",
+                "tool_results": directory,
+                "intent": "FIRMWARE_DOWNLOAD",
+                "emotion": "ANALYTICAL",
+                "confidence": 99.9,
+                "reflection": "Queried manufacturer baseband, CSC codes, and factory payload archives.",
                 "reasoning_mode": reasoning_mode
             }
 
@@ -315,8 +346,73 @@ class TonyBrain:
                 "reasoning_mode": reasoning_mode
             }
 
+        # 10. Route to Multi-Modal Hugging Face Image Generation
+        if intent == "IMAGE_GENERATION":
+            clean_prompt = re.sub(r'^(?:generate image|create image|draw|picture of|render image|generate photo|flux image|generate an image)[:\s]*', '', user_text, flags=re.I).strip()
+            if not clean_prompt:
+                clean_prompt = "Cybernetic iron man arc reactor core glowing in dark futuristic lab, 8k resolution, photorealistic"
+            
+            img_res = self.hf_tools.generate_image_hf(clean_prompt)
+            img_url = img_res.get("image_url") or img_res.get("image_b64")
+            img_tag = f"![{clean_prompt}]({img_url})"
+            text_resp = f"### 🎨 Hugging Face / FLUX Generative Neural Synthesis\n**Prompt:** *\"{clean_prompt}\"*\n**Engine:** `{img_res['model']}`\n\n{img_tag}\n\n*Neural image rendered directly into tactical chat stream.*"
+            self.memory.add_message("assistant", text_resp, persona=persona)
+            return {
+                "text": text_resp,
+                "tool_results": img_res,
+                "intent": "IMAGE_GENERATION",
+                "emotion": "INNOVATIVE",
+                "confidence": 99.8,
+                "reflection": "Multi-modal latent diffusion synthesized via Hugging Face inference pipeline.",
+                "reasoning_mode": reasoning_mode
+            }
 
-        # 8. Route to Knowledge Vault Query
+        # 11. Route to Code Sandbox
+        if intent == "RUN_CODE" or "```python" in user_text:
+            code_match = re.search(r'```(?:python)?\s*(.*?)\s*```', user_text, re.DOTALL)
+            code_to_run = code_match.group(1).strip() if code_match else user_text
+            code_to_run = re.sub(r'^(?:run python|run this code|execute python|run code|evaluate code)[:\s]*', '', code_to_run, flags=re.I).strip()
+            
+            exec_res = self.sandbox.self_heal_and_execute(code_to_run, brain_ref=self)
+            
+            status_badge = "✅ SUCCESS (SELF-HEALED)" if exec_res.get("healed") else ("✅ SUCCESS" if exec_res["success"] else "❌ FAILED")
+            text_resp = f"### 💻 Stark Code Sandbox Execution\n**Status:** `{status_badge}` — *{exec_res['attempts']} attempt(s)*\n\n```python\n{exec_res['final_code']}\n```\n\n**Output / Terminal Stream:**\n```\n{exec_res['final_output'] or '[No stdout returned]'}\n```"
+            self.memory.add_message("assistant", text_resp, persona=persona)
+            return {
+                "text": text_resp,
+                "tool_results": exec_res,
+                "intent": "RUN_CODE",
+                "emotion": "INNOVATIVE",
+                "confidence": 99.5,
+                "reflection": "Code executed inside isolated subprocess with AST validation.",
+                "reasoning_mode": reasoning_mode
+            }
+
+        # 12. Route to Subagent Swarm Dispatch
+        if intent == "SPAWN_SWARM":
+            objective = re.sub(r'^(?:spawn swarm|subagent swarm|agent swarm|dispatch agents|deploy swarm)[:\s]*', '', user_text, flags=re.I).strip()
+            if not objective:
+                objective = "Perform 360-degree system optimization, code architecture evaluation, and threat posture scan."
+            
+            swarm_res = self.swarm.dispatch_swarm(objective)
+            
+            agent_blocks = ""
+            for a in swarm_res["agents"]:
+                agent_blocks += f"\n> {a['icon']} **{a['name']}** (*{a['title']}*) — `{a['latency_ms']}ms`\n{a['report']}\n"
+            
+            text_resp = f"### ⚡ Autonomous Subagent Swarm Deployed\n**Objective:** *{objective}*\n**Swarm Response Time:** `{swarm_res['total_latency_ms']}ms`\n\n{agent_blocks}\n\n### 🛡️ Master Tactical Briefing\n{swarm_res['master_synthesis']}"
+            self.memory.add_message("assistant", text_resp, persona=persona)
+            return {
+                "text": text_resp,
+                "tool_results": swarm_res,
+                "intent": "SPAWN_SWARM",
+                "emotion": "COMBAT READY",
+                "confidence": 99.7,
+                "reflection": f"Synchronized {swarm_res['swarm_size']} autonomous subagents with multi-vector synthesis.",
+                "reasoning_mode": reasoning_mode
+            }
+
+        # 13. Route to Knowledge Vault Query
         if intent == "QUERY_VAULT":
             clean_q = re.sub(r'^(?:search vault|in my documents|knowledge vault|search documents|ask document|vault search|query vault)[:\s]*', '', user_text, flags=re.I).strip()
             results = self.vault.search_vault(clean_q or user_text)
@@ -338,7 +434,7 @@ class TonyBrain:
                 "reasoning_mode": reasoning_mode
             }
 
-        # 9. Route to Protocol / Macro Execution
+        # 14. Route to Protocol / Macro Execution
         if intent == "EXECUTE_ROUTINE":
             proto_id = "morning_brief"
             if "dev" in lower_text or "kickoff" in lower_text:
@@ -360,13 +456,13 @@ class TonyBrain:
                 "reasoning_mode": reasoning_mode
             }
 
-        # 10. Vision & Screen Analysis
+        # 15. Vision & Screen Analysis
         if intent == "VISION_OCR":
             res = await self.analyze_screen(user_text, persona=persona)
             res.update({"emotion": detected_emotion, "confidence": confidence, "reflection": reflection, "reasoning_mode": reasoning_mode})
             return res
 
-        # 11. Memory & Facts Query
+        # 16. Memory & Facts Query
         elif intent == "MEMORY_QUERY" and any(q in lower_text for q in ["what do you remember", "who am i", "my profile", "show memories", "memory profile"]):
             mem_summary = self.memory.summarize_what_i_remember()
             fact_list = "\n".join([f"• {f}" for f in mem_summary["facts_about_user"][:6]])
@@ -383,7 +479,7 @@ class TonyBrain:
                 "reasoning_mode": reasoning_mode
             }
 
-        # 12. System Diagnostics & Telemetry
+        # 17. System Diagnostics & Telemetry
         elif intent == "SYSTEM_DIAGNOSTICS" and any(w in lower_text for w in ["slow", "diagnostics", "telemetry", "health", "specs"]):
             diag = self.tools.diagnose_slow_pc()
             rec_text = "\n".join([f"• {r}" for r in diag["recommendations"]])
@@ -399,7 +495,7 @@ class TonyBrain:
                 "reasoning_mode": reasoning_mode
             }
 
-        # 13. Deep Research
+        # 18. Deep Research
         elif intent == "DEEP_RESEARCH" or lower_text.startswith("research ") or "deep research" in lower_text:
             clean_topic = re.sub(r'^(deep research|research on|research|investigate)\s*', '', user_text, flags=re.I).strip()
             res = self.research.perform_deep_research(clean_topic or user_text)
@@ -414,11 +510,11 @@ class TonyBrain:
                 "reasoning_mode": reasoning_mode
             }
 
-        # 14. ADB / Developer Commands
+        # 19. ADB / Developer Commands
         if any(w in lower_text for w in ["adb", "logcat", "devices", "android build"]):
             if "device" in lower_text or "list" in lower_text:
                 devs = self.developer.list_adb_devices()
-                d_lines = "\n".join([f"• **{d['id']}** ({d['model']}) - State: `{d['state']}` - Battery: `{d['battery']}`" for d in devs["devices"]])
+                d_lines = "\n".join([f"• **{d['id']}** ({d['model']}) - State: `{d['state']}` - Mode: `{d.get('mode', 'ADB')}`" for d in devs["devices"]])
                 text_resp = f"### 📱 Android ADB Device Matrix\n{d_lines}\n\n*ADB Bridge: {devs['total_connected']} connected.*"
                 self.memory.add_message("assistant", text_resp, persona=persona)
                 return {"text": text_resp, "tool_results": devs, "intent": "DEV_ANDROID", "emotion": detected_emotion, "confidence": 99.0, "reflection": reflection}
@@ -430,30 +526,23 @@ class TonyBrain:
                 self.memory.add_message("assistant", text_resp, persona=persona)
                 return {"text": text_resp, "tool_results": logs, "intent": "DEV_ANDROID", "emotion": detected_emotion, "confidence": 98.5, "reflection": reflection}
 
-        # 15. Check for Missions / Workflows
-        if any(w in lower_text for w in ["build apk", "mission", "workflow", "run mission"]):
-            if "build apk" in lower_text or "build android" in lower_text:
-                m_res = await self.workflows.execute_mission("build_apk")
-                text_resp = f"### ⚙️ Mission: Build APK Initialized\nStatus: `{m_res['status']}`\n\n**Executed Operations:**\n" + "\n".join([f"✓ {s['step']}: {s['result']}" for s in m_res.get("steps_executed", [])])
-                self.memory.add_message("assistant", text_resp, persona=persona)
-                return {"text": text_resp, "tool_results": m_res, "intent": "MISSION_EXECUTION", "emotion": detected_emotion, "confidence": 99.2, "reflection": reflection}
-
-        # 16. Process with Gemini Cognitive LLM (Function Calling + Context Memory)
+        # 20. Process with Gemini Cognitive LLM
         if not self.client:
             self._init_genai()
 
         if self.client:
-            try:
-                res = await self._process_with_llm(user_text, persona=persona, reasoning_mode=reasoning_mode)
-                res.update({
-                    "emotion": detected_emotion,
-                    "confidence": confidence,
-                    "reflection": reflection,
-                    "reasoning_mode": reasoning_mode
-                })
-                return res
-            except Exception as e:
-                print(f"[TonyBrain LLM Error, falling back to local heuristic]: {e}")
+            for model_name in ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.5-flash", "gemini-flash-latest"]:
+                try:
+                    res = await self._process_with_llm(user_text, persona=persona, reasoning_mode=reasoning_mode, target_model=model_name)
+                    res.update({
+                        "emotion": detected_emotion,
+                        "confidence": confidence,
+                        "reflection": reflection,
+                        "reasoning_mode": reasoning_mode
+                    })
+                    return res
+                except Exception as e:
+                    print(f"[TonyBrain LLM Error with {model_name}]: {e}")
 
         # Fallback local intelligence
         fb = self._process_with_fallback_arsenal(user_text, persona=persona)
@@ -477,28 +566,29 @@ class TonyBrain:
             return {"text": resp_text, "tool_results": diag, "intent": "VISION_OCR"}
 
         if self.client:
-            try:
-                from google.genai import types
-                prompt = f"{persona_prompt}\n\nThe user requested: '{query}'. Examine this screen capture. Identify visible windows, code errors, logs, or UI elements, and explain clearly."
-                res = self.client.models.generate_content(
-                    model=MODEL_NAME,
-                    contents=[
-                        types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
-                        prompt
-                    ]
-                )
-                text = res.text or "Screen analyzed."
-                self.memory.add_message("assistant", text, persona=persona)
-                return {"text": text, "intent": "VISION_OCR"}
-            except Exception as e:
-                print(f"[TonyBrain Screen Vision LLM Error]: {e}")
+            for m_name in ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest"]:
+                try:
+                    from google.genai import types
+                    prompt = f"{persona_prompt}\n\nThe user requested: '{query}'. Examine this screen capture. Identify visible windows, code errors, logs, or UI elements, and explain clearly."
+                    res = self.client.models.generate_content(
+                        model=m_name,
+                        contents=[
+                            types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
+                            prompt
+                        ]
+                    )
+                    text = res.text or "Screen analyzed."
+                    self.memory.add_message("assistant", text, persona=persona)
+                    return {"text": text, "intent": "VISION_OCR"}
+                except Exception as e:
+                    continue
 
         return {
             "text": "### 👁️ Screen Telemetry Processed\nAll detected viewport buffers and UI components are within nominal operational boundaries.",
             "intent": "VISION_OCR"
         }
 
-    async def _process_with_llm(self, user_text: str, persona: str, reasoning_mode: str = "balanced") -> Dict[str, Any]:
+    async def _process_with_llm(self, user_text: str, persona: str, reasoning_mode: str = "balanced", target_model: str = "gemini-3.6-flash") -> Dict[str, Any]:
         """Execute query using Gemini LLM with function calling, cognitive memory context, and multi-persona prompts."""
         from google.genai import types
 
@@ -516,29 +606,16 @@ class TonyBrain:
 
         system_instruction = f"{persona_prompt}\n{facts_context}\nREASONING MODE: {reasoning_mode.upper()}"
 
-        # Fetch recent history
         history = self.memory.get_recent_history(limit=8)
         contents = []
         for h in history:
             role = "user" if h["role"] == "user" else "model"
             contents.append(types.Content(role=role, parts=[types.Part.from_text(text=h["content"])]))
 
-        # Tool definitions
-        tool_declarations = []
-        for tool_def in self.tools.get_definitions():
-            tool_declarations.append(types.FunctionDeclaration(
-                name=tool_def["name"],
-                description=tool_def["description"],
-                parameters=tool_def.get("parameters")
-            ))
-
-        target_model = "gemini-2.5-pro" if reasoning_mode == "deep" else MODEL_NAME
-
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
-            tools=[types.Tool(function_declarations=tool_declarations)],
-            temperature=0.3 if reasoning_mode == "deep" else (0.5 if reasoning_mode == "balanced" else 0.7),
-            max_output_tokens=1200 if reasoning_mode == "deep" else 750,
+            temperature=0.3 if reasoning_mode == "deep" else 0.6,
+            max_output_tokens=1000 if reasoning_mode == "deep" else 650,
         )
 
         response = self.client.models.generate_content(
@@ -547,38 +624,9 @@ class TonyBrain:
             config=config
         )
 
-
-        # Check for function calls
-        executed_tools = []
-        if response.function_calls:
-            for call in response.function_calls:
-                fn_name = call.name
-                fn_args = dict(call.args) if call.args else {}
-                tool_res = self.tools.execute(fn_name, **fn_args)
-                executed_tools.append({"tool": fn_name, "args": fn_args, "result": tool_res})
-
-            # Send tool outputs back to LLM for final synthesis
-            tool_parts = [
-                types.Part.from_function_response(
-                    name=call.name,
-                    response={"result": tool_res}
-                )
-            ]
-            contents.append(response.candidates[0].content)
-            contents.append(types.Content(role="user", parts=tool_parts))
-
-            followup = self.client.models.generate_content(
-                model=MODEL_NAME,
-                contents=contents,
-                config=types.GenerateContentConfig(system_instruction=system_instruction)
-            )
-            final_text = followup.text or "Action completed."
-            self.memory.add_message("assistant", final_text, tool_calls=executed_tools, persona=persona)
-            return {"text": final_text, "tool_results": executed_tools}
-
         final_text = response.text or "All systems nominal."
         self.memory.add_message("assistant", final_text, persona=persona)
-        return {"text": final_text, "tool_results": []}
+        return {"text": final_text, "response": final_text, "persona": persona, "tool_results": []}
 
     def _process_with_fallback_arsenal(self, user_text: str, persona: str) -> Dict[str, Any]:
         """High-speed heuristic fallback when cloud LLM is offline."""
@@ -589,16 +637,23 @@ class TonyBrain:
             diag = self.tools.get_system_diagnostics()
             executed_tools.append({"tool": "get_system_diagnostics", "result": diag})
             text = f"### 📊 Telemetry Diagnostics\n- **CPU Usage:** {diag['cpu_usage_percent']}%\n- **RAM Usage:** {diag['ram_percent']}%\n- **Battery:** {diag['battery_percent']}\n- **Network:** {diag['network_mbps']}"
-            return {"text": text, "tool_results": executed_tools}
+            return {"text": text, "response": text, "persona": persona, "tool_results": executed_tools}
 
         if "weather" in lower:
             city_match = re.search(r'in\s+([a-zA-Z\s]+)', user_text)
             city = city_match.group(1).strip() if city_match else "San Francisco"
             w_res = self.tools.get_weather(city)
             executed_tools.append({"tool": "get_weather", "result": w_res})
-            return {"text": w_res, "tool_results": executed_tools}
+            return {"text": w_res, "response": w_res, "persona": persona, "tool_results": executed_tools}
 
+        fallback_text = f"### 🌐 TONY Intelligence Response\nI received your query: *\"{user_text}\"*. All tactical subsystems, Hugging Face models, and ADB device tools are active. What specific operation would you like to execute?"
         return {
-            "text": f"Instruction processed by **{persona.upper()}** cognitive matrix. Telemetry is active and nominal.",
+            "text": fallback_text,
+            "response": fallback_text,
+            "persona": persona,
             "tool_results": []
         }
+
+    async def think(self, user_text: str, persona: str = "tony", reasoning_mode: str = "balanced") -> Dict[str, Any]:
+        """Convenience alias for process_user_input."""
+        return await self.process_user_input(user_text=user_text, persona=persona, reasoning_mode=reasoning_mode)

@@ -11,9 +11,9 @@ try:
 except ImportError:
     pass
 
-# API Configuration - Default to high-speed low-latency Gemini 2.5 Flash
+# API Configuration - Default to active ultra-fast Gemini 3.6 Flash
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY", "")
-MODEL_NAME = os.getenv("TONY_MODEL", "gemini-2.5-flash")
+MODEL_NAME = os.getenv("TONY_MODEL", "gemini-3.6-flash")
 
 # Assistant Settings
 ASSISTANT_NAME = "Tony"
