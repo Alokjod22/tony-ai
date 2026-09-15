@@ -1,7 +1,7 @@
 import asyncio
 import json
 from typing import Optional, Dict, Any, List
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
@@ -15,6 +15,11 @@ from core.vision import VisionEngine
 from core.workflows import WorkflowAndMissionEngine
 from core.developer import DeveloperAndAndroidCore
 from core.research import AutonomousResearchEngine
+from core.sandbox import CodeSandboxEngine
+from core.agents import AgentSwarmEngine
+from core.vault import KnowledgeVaultEngine
+from core.routines import ProtocolEngine
+from core.huggingface_tools import HuggingFaceArsenal
 from core.brain import TonyBrain
 from core.voice import VoiceEngine
 
@@ -28,6 +33,12 @@ vision = VisionEngine()
 workflows = WorkflowAndMissionEngine(memory=memory, tools=tools)
 developer = DeveloperAndAndroidCore(memory=memory)
 research = AutonomousResearchEngine()
+sandbox = CodeSandboxEngine()
+swarm = AgentSwarmEngine()
+vault = KnowledgeVaultEngine()
+protocols = ProtocolEngine()
+hf_tools = HuggingFaceArsenal()
+
 brain = TonyBrain(
     memory=memory,
     tools=tools,
@@ -35,7 +46,12 @@ brain = TonyBrain(
     security=security,
     workflows=workflows,
     developer=developer,
-    research=research
+    research=research,
+    sandbox=sandbox,
+    swarm=swarm,
+    vault=vault,
+    protocols=protocols,
+    hf_tools=hf_tools
 )
 voice = VoiceEngine()
 
@@ -75,6 +91,30 @@ class CrashAnalysisRequest(BaseModel):
 class ResearchRequest(BaseModel):
     topic: str
 
+class SandboxRunRequest(BaseModel):
+    code: str
+    auto_heal: Optional[bool] = True
+
+class SwarmDispatchRequest(BaseModel):
+    objective: str
+    roles: Optional[List[str]] = None
+
+class VaultQueryRequest(BaseModel):
+    query: str
+    top_k: Optional[int] = 4
+
+class ExecuteProtocolRequest(BaseModel):
+    protocol_id: str
+
+class HFImageRequest(BaseModel):
+    prompt: str
+
+class HFSummarizeRequest(BaseModel):
+    text: str
+
+class HFSentimentRequest(BaseModel):
+    text: str
+
 # --- Static Routes ---
 @app.get("/")
 async def get_index():
@@ -109,7 +149,6 @@ async def handle_chat(req: ChatRequest):
 @app.post("/api/action/approve")
 async def handle_action_approval(req: ActionApprovalRequest):
     if req.approved:
-        # Execute approved command
         if req.command:
             res = tools.run_terminal_command(req.command)
             return {"status": "executed", "result": res}
@@ -155,7 +194,71 @@ async def get_security_status():
 async def update_security_level(req: SetSecurityRequest):
     return security.set_security_level(req.level)
 
-# --- 3. Missions & Workflow Endpoints ---
+# --- 3. Stark Sandbox & Live Interpreter Endpoints ---
+@app.post("/api/sandbox/run")
+async def run_sandbox_code(req: SandboxRunRequest):
+    if req.auto_heal:
+        return sandbox.self_heal_and_execute(req.code, brain_ref=brain)
+    return sandbox.execute_python(req.code)
+
+# --- 4. Subagent Swarm Endpoints ---
+@app.post("/api/swarm/dispatch")
+async def dispatch_swarm_endpoint(req: SwarmDispatchRequest):
+    return swarm.dispatch_swarm(req.objective, agent_roles=req.roles)
+
+# --- 5. Hugging Face Inference Multi-Modal Endpoints ---
+@app.post("/api/hf/image")
+async def hf_generate_image(req: HFImageRequest):
+    return hf_tools.generate_image_hf(req.prompt)
+
+@app.post("/api/hf/summarize")
+async def hf_summarize_doc(req: HFSummarizeRequest):
+    return hf_tools.summarize_text_hf(req.text)
+
+@app.post("/api/hf/sentiment")
+async def hf_analyze_sentiment(req: HFSentimentRequest):
+    return hf_tools.classify_sentiment_hf(req.text)
+
+# --- 6. Knowledge Vault & Document RAG Endpoints ---
+@app.get("/api/vault/documents")
+async def get_vault_docs():
+    return vault.list_documents()
+
+@app.post("/api/vault/query")
+async def query_vault_endpoint(req: VaultQueryRequest):
+    return vault.search_vault(req.query, top_k=req.top_k or 4)
+
+@app.post("/api/vault/upload")
+async def upload_vault_file(file: UploadFile = File(...)):
+    try:
+        content_bytes = await file.read()
+        filename = file.filename
+        
+        upload_dir = BASE_DIR / "data" / "uploads"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = upload_dir / filename
+        
+        with open(dest_path, "wb") as f:
+            f.write(content_bytes)
+            
+        extracted_text = vault.extract_text_from_file(str(dest_path))
+        doc_type = filename.split(".")[-1].lower() if "." in filename else "text"
+        
+        res = vault.ingest_document(filename=filename, content=extracted_text, doc_type=doc_type)
+        return res
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# --- 7. Protocols & Macro Engine Endpoints ---
+@app.get("/api/protocols")
+async def get_protocols_list():
+    return protocols.list_protocols()
+
+@app.post("/api/protocols/execute")
+async def execute_protocol_endpoint(req: ExecuteProtocolRequest):
+    return protocols.execute_protocol(req.protocol_id, brain_ref=brain)
+
+# --- 8. Missions & Workflow Endpoints ---
 @app.get("/api/missions")
 async def get_missions_list():
     return workflows.get_available_missions()
@@ -172,7 +275,7 @@ async def get_workflows():
 async def run_workflow_endpoint(req: RunWorkflowRequest):
     return await workflows.run_workflow(req.workflow_name)
 
-# --- 4. Developer & Android Endpoints ---
+# --- 9. Developer & Android Endpoints ---
 @app.get("/api/android/devices")
 async def get_android_devices():
     return developer.list_adb_devices()
@@ -189,7 +292,7 @@ async def get_git_status():
 async def analyze_crash(req: CrashAnalysisRequest):
     return developer.analyze_crash_log(req.log_text)
 
-# --- 5. Autonomous Research Endpoints ---
+# --- 10. Autonomous Research Endpoints ---
 @app.post("/api/research")
 async def run_research(req: ResearchRequest):
     return research.perform_deep_research(req.topic)
@@ -199,7 +302,6 @@ async def run_research(req: ResearchRequest):
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     
-    # Send initial telemetry
     try:
         await websocket.send_json({
             "type": "telemetry",

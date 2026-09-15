@@ -30,7 +30,7 @@ const PERSONA_CONFIGS = {
         basePitch: 0.84,
         baseRate: 0.98,
         preferredKeywords: ["George", "Daniel", "Oliver", "Arthur", "Ryan", "Google UK English Male", "en-GB"],
-        testQuote: "Good evening, sir. Tactical telemetry and security protocols are fully active."
+        testQuote: "Good evening, sir. Tactical telemetry and subagent swarms are operational."
     },
     friday: {
         id: "friday",
@@ -41,7 +41,7 @@ const PERSONA_CONFIGS = {
         basePitch: 1.28,
         baseRate: 1.08,
         preferredKeywords: ["Zira", "Hazel", "Susan", "Jenny", "Aria", "Samantha", "Victoria", "Google UK English Female", "Irish", "Female"],
-        testQuote: "Right away, Boss. Diagnostics running at full capacity."
+        testQuote: "Right away, Boss. Diagnostics and subagents running at full capacity."
     },
     ultron: {
         id: "ultron",
@@ -102,47 +102,79 @@ function switchPersona(personaId, triggerVoice = false) {
         }
     });
 
-    const config = PERSONA_CONFIGS[personaId];
-    
-    const ambientText = document.getElementById("ambientText");
-    if (ambientText) {
-        ambientText.innerText = personaId === "jarvis" ? "HEY JARVIS" : (personaId === "friday" ? "HEY FRIDAY" : (personaId === "ultron" ? "ULTRON" : "HEY TONY"));
-    }
-
+    const cfg = PERSONA_CONFIGS[personaId];
     const welcomeAvatar = document.getElementById("welcomeAvatar");
     const welcomeSender = document.getElementById("welcomeSender");
-    if (welcomeAvatar) welcomeAvatar.innerText = config.avatar;
-    if (welcomeSender) welcomeSender.innerText = config.title;
+    const ambientText = document.getElementById("ambientText");
+
+    if (welcomeAvatar) welcomeAvatar.innerText = cfg.avatar;
+    if (welcomeSender) welcomeSender.innerText = cfg.title;
+    if (ambientText) ambientText.innerText = personaId === "jarvis" ? "HEY JARVIS" : (personaId === "friday" ? "HEY FRIDAY" : (personaId === "ultron" ? "ULTRON" : "HEY TONY"));
 
     if (triggerVoice && voiceOutputEnabled) {
-        speakResponse(`Persona switched to ${config.name}. Systems synchronized.`);
+        speakResponse(cfg.testQuote);
     }
 }
 
-// 2. TTS Voice Engine
+// 2. Audio Waveform Spectrum Canvas Visualizer
+let visualizerAnimationId = null;
+function initAudioVisualizer() {
+    const canvas = document.getElementById("audioVisualizer");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const numBars = 16;
+    let phase = 0;
+
+    function renderVisualizer() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cfg = PERSONA_CONFIGS[currentPersona] || PERSONA_CONFIGS.tony;
+        const color = cfg.color || "#ffd700";
+
+        phase += 0.08;
+        const isLive = isCurrentlySpeaking || isRecording;
+        const maxBarHeight = canvas.height - 4;
+        const barWidth = Math.floor(canvas.width / numBars) - 2;
+
+        for (let i = 0; i < numBars; i++) {
+            let magnitude = 0.15;
+            if (isLive) {
+                magnitude = 0.3 + 0.65 * Math.abs(Math.sin(phase + i * 0.45) * Math.cos(phase * 0.8 + i * 0.2));
+            } else {
+                magnitude = 0.15 + 0.1 * Math.sin(phase * 0.5 + i * 0.3);
+            }
+
+            const barHeight = Math.max(3, magnitude * maxBarHeight);
+            const x = i * (barWidth + 2) + 2;
+            const y = (canvas.height - barHeight) / 2;
+
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = isLive ? 8 : 2;
+            ctx.fillRect(x, y, barWidth, barHeight);
+        }
+
+        visualizerAnimationId = requestAnimationFrame(renderVisualizer);
+    }
+
+    if (visualizerAnimationId) cancelAnimationFrame(visualizerAnimationId);
+    renderVisualizer();
+}
+
+// 3. Speech Synthesis & Dynamic Voice Calibration
 function resolveVoiceForPersona(personaId) {
     if (!('speechSynthesis' in window)) return null;
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return null;
 
-    const config = PERSONA_CONFIGS[personaId] || PERSONA_CONFIGS.tony;
-    const customUri = customPersonaVoices[personaId];
-    if (customUri) {
-        const custom = voices.find(v => v.voiceURI === customUri || v.name === customUri);
+    if (customPersonaVoices[personaId]) {
+        const custom = voices.find(v => (v.voiceURI === customPersonaVoices[personaId] || v.name === customPersonaVoices[personaId]));
         if (custom) return custom;
     }
 
-    if (personaId === "friday") {
-        const female = voices.find(v => {
-            const n = (v.name + " " + v.lang).toLowerCase();
-            return n.includes("female") || n.includes("zira") || n.includes("hazel") || n.includes("susan") || n.includes("aria") || n.includes("en-ie");
-        });
-        if (female) return female;
-    }
-
-    for (const kw of config.preferredKeywords) {
-        const found = voices.find(v => v.name.toLowerCase().includes(kw.toLowerCase()));
-        if (found) return found;
+    const cfg = PERSONA_CONFIGS[personaId] || PERSONA_CONFIGS.tony;
+    for (const kw of cfg.preferredKeywords) {
+        const match = voices.find(v => v.name.toLowerCase().includes(kw.toLowerCase()) || v.lang.toLowerCase().includes(kw.toLowerCase()));
+        if (match) return match;
     }
 
     return voices[0];
@@ -150,80 +182,67 @@ function resolveVoiceForPersona(personaId) {
 
 function speakResponse(text) {
     if (!voiceOutputEnabled || !('speechSynthesis' in window)) return;
-    if (!text || text.trim() === "") return;
 
     window.speechSynthesis.cancel();
+    isCurrentlySpeaking = false;
+    updateInterruptBtn(false);
 
-    let cleanText = text
-        .replace(/###|##|#/g, '')
-        .replace(/\*\*(.*?)\*\*/g, '$1')
-        .replace(/\*(.*?)\*/g, '$1')
-        .replace(/`([^`]+)`/g, '$1')
-        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-        .replace(/[•\-\*]\s+/g, '')
+    const cleanText = text
+        .replace(/```[\s\S]*?```/g, "Code block omitted from speech.")
+        .replace(/###\s+/g, "")
+        .replace(/\*\*/g, "")
+        .replace(/[•✓⚙️🛡️⚡👁️🌐⚔️💻📱📊🧠]/g, "")
         .trim();
 
-    if (cleanText.length > 320) {
-        cleanText = cleanText.substring(0, 320) + "...";
-    }
+    if (!cleanText) return;
 
-    const config = PERSONA_CONFIGS[currentPersona] || PERSONA_CONFIGS.tony;
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    const selectedVoice = resolveVoiceForPersona(currentPersona);
+    const cfg = PERSONA_CONFIGS[currentPersona] || PERSONA_CONFIGS.tony;
+    const voice = resolveVoiceForPersona(currentPersona);
+    if (voice) utterance.voice = voice;
 
-    if (selectedVoice) utterance.voice = selectedVoice;
-    
-    let pitch = config.basePitch;
-    let rate = config.baseRate * userSpeedMultiplier;
-
-    if (whisperMode) {
-        rate = rate * 0.85;
-        utterance.volume = 0.35;
-    } else {
-        utterance.volume = 1.0;
-    }
-
-    utterance.pitch = pitch;
-    utterance.rate = rate;
+    utterance.pitch = cfg.basePitch;
+    utterance.rate = whisperMode ? (cfg.baseRate * 0.85) : (cfg.baseRate * userSpeedMultiplier);
+    if (whisperMode) utterance.volume = 0.45;
 
     utterance.onstart = () => {
         isCurrentlySpeaking = true;
-        const interruptBtn = document.getElementById("interruptBtn");
-        if (interruptBtn) interruptBtn.style.display = "flex";
-        if (recognition && isRecording) {
-            try { recognition.abort(); } catch(e) {}
+        updateInterruptBtn(true);
+        if (recognition && isRecording && !continuousMode) {
+            try { recognition.stop(); } catch(e){}
         }
     };
 
     utterance.onend = () => {
         isCurrentlySpeaking = false;
-        const interruptBtn = document.getElementById("interruptBtn");
-        if (interruptBtn) interruptBtn.style.display = "none";
-        if (continuousMode) {
-            setTimeout(() => { if (!isRecording) startSpeechRecognition(); }, 400);
+        updateInterruptBtn(false);
+        if (continuousMode && !isRecording) {
+            startSpeechRecognition();
         }
     };
 
     utterance.onerror = () => {
         isCurrentlySpeaking = false;
-        const interruptBtn = document.getElementById("interruptBtn");
-        if (interruptBtn) interruptBtn.style.display = "none";
+        updateInterruptBtn(false);
     };
 
     window.speechSynthesis.speak(utterance);
 }
 
-// Barge-in Interruption
 function bargeInInterrupt() {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
     }
     isCurrentlySpeaking = false;
-    const interruptBtn = document.getElementById("interruptBtn");
-    if (interruptBtn) interruptBtn.style.display = "none";
+    updateInterruptBtn(false);
 }
 
-// 3. Speech Recognition Engine
+function updateInterruptBtn(speaking) {
+    const btn = document.getElementById("interruptBtn");
+    if (btn) btn.style.display = speaking ? "flex" : "none";
+}
+
+// 4. Speech Recognition (Push-to-Talk & Hands-Free Ambient)
 function initSpeechRecognition() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) return;
@@ -231,145 +250,162 @@ function initSpeechRecognition() {
     recognition = new SpeechRec();
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    recognition.lang = "en-US";
 
     recognition.onstart = () => {
         isRecording = true;
-        const micBtn = document.getElementById("micBtn");
-        if (micBtn) micBtn.classList.add("listening");
+        updateMicUi(true);
     };
 
     recognition.onresult = (event) => {
-        if (isCurrentlySpeaking) return;
-
+        if (!event.results || !event.results[0]) return;
         const transcript = event.results[0][0].transcript.trim();
         if (!transcript) return;
 
-        const now = Date.now();
-        if (transcript.toLowerCase() === lastTransmittedText.toLowerCase() && (now - lastTransmittedTime < 3000)) {
-            return;
-        }
-
+        // Wake word trigger
         const lower = transcript.toLowerCase();
-        let cleanedPrompt = transcript;
-        if (lower.startsWith("hey tony") || lower.startsWith("hey jarvis") || lower.startsWith("friday") || lower.startsWith("ultron")) {
-            cleanedPrompt = transcript.replace(/^(hey tony|hey jarvis|friday|ultron)[,\s]*/i, '').trim();
+        const isWake = lower.startsWith("hey tony") || lower.startsWith("hey jarvis") || lower.startsWith("hey friday") || lower.startsWith("friday") || lower.startsWith("ultron");
+        let cleanPrompt = transcript;
+
+        if (isWake) {
+            cleanPrompt = transcript.replace(/^(hey tony|hey jarvis|hey friday|friday|ultron)[,\s]*/i, "");
+            if (lower.startsWith("hey jarvis")) switchPersona("jarvis");
+            else if (lower.startsWith("hey friday") || lower.startsWith("friday")) switchPersona("friday");
+            else if (lower.startsWith("ultron")) switchPersona("ultron");
+            else if (lower.startsWith("hey tony")) switchPersona("tony");
         }
 
-        if (cleanedPrompt.length > 0) {
-            lastTransmittedText = transcript;
-            lastTransmittedTime = now;
+        if (cleanPrompt.trim()) {
             const input = document.getElementById("chatInput");
-            if (input) input.value = cleanedPrompt;
+            if (input) input.value = cleanPrompt;
             sendChatMessage();
         }
     };
 
     recognition.onerror = () => {
         isRecording = false;
-        const micBtn = document.getElementById("micBtn");
-        if (micBtn) micBtn.classList.remove("listening");
+        updateMicUi(false);
     };
 
     recognition.onend = () => {
         isRecording = false;
-        const micBtn = document.getElementById("micBtn");
-        if (micBtn) micBtn.classList.remove("listening");
+        updateMicUi(false);
         if (continuousMode && !isCurrentlySpeaking) {
-            setTimeout(() => { startSpeechRecognition(); }, 500);
+            setTimeout(startSpeechRecognition, 300);
         }
     };
 }
 
-function startSpeechRecognition() {
-    if (isCurrentlySpeaking || !recognition) return;
-    try {
-        recognition.start();
-    } catch(e) {}
-}
-
 function toggleVoiceInput() {
     if (isRecording) {
-        if (recognition) recognition.stop();
+        stopSpeechRecognition();
     } else {
+        bargeInInterrupt();
         startSpeechRecognition();
     }
 }
 
+function startSpeechRecognition() {
+    if (!recognition) initSpeechRecognition();
+    if (recognition && !isRecording) {
+        try { recognition.start(); } catch(e){}
+    }
+}
+
+function stopSpeechRecognition() {
+    if (recognition && isRecording) {
+        try { recognition.stop(); } catch(e){}
+    }
+}
+
+function updateMicUi(recording) {
+    const btn = document.getElementById("micBtn");
+    const waves = document.getElementById("micWaves");
+    const icon = document.getElementById("micIcon");
+    if (btn) btn.classList.toggle("recording", recording);
+    if (waves) waves.style.display = recording ? "flex" : "none";
+    if (icon) icon.innerText = recording ? "🔴" : "🎙️";
+}
+
+// 5. Header Control Handlers
 function toggleContinuousMode() {
     continuousMode = !continuousMode;
-    const btn = document.getElementById("continuousBtn");
     const label = document.getElementById("continuousLabel");
-    if (btn && label) {
-        if (continuousMode) {
-            btn.classList.add("active");
-            label.innerText = "👂 CONVERSATION: ON";
-            startSpeechRecognition();
-        } else {
-            btn.classList.remove("active");
-            label.innerText = "👂 CONVERSATION: OFF";
-            if (recognition) recognition.stop();
-        }
-    }
+    const btn = document.getElementById("continuousBtn");
+    if (label) label.innerText = `👂 CONVERSATION: ${continuousMode ? 'ON' : 'OFF'}`;
+    if (btn) btn.classList.toggle("active", continuousMode);
+    if (continuousMode) startSpeechRecognition();
+    else stopSpeechRecognition();
 }
 
 function toggleWhisperMode() {
     whisperMode = !whisperMode;
-    const btn = document.getElementById("whisperBtn");
     const label = document.getElementById("whisperLabel");
-    if (btn && label) {
-        if (whisperMode) {
-            btn.classList.add("active");
-            label.innerText = "🤫 WHISPER: ON";
-        } else {
-            btn.classList.remove("active");
-            label.innerText = "🤫 WHISPER: OFF";
-        }
-    }
+    const btn = document.getElementById("whisperBtn");
+    if (label) label.innerText = `🤫 WHISPER: ${whisperMode ? 'ON' : 'OFF'}`;
+    if (btn) btn.classList.toggle("active", whisperMode);
 }
 
-function setSpeechRate(rate) {
-    userSpeedMultiplier = parseFloat(rate) || 1.2;
+function setSpeechRate(val) {
+    userSpeedMultiplier = parseFloat(val) || 1.2;
 }
 
-function toggleVoiceOutput() {
-    voiceOutputEnabled = !voiceOutputEnabled;
-    const icon = document.getElementById("voiceIcon");
-    if (icon) icon.innerText = voiceOutputEnabled ? "🔊" : "🔇";
-    if (!voiceOutputEnabled) window.speechSynthesis.cancel();
-}
-
-function setSecurityMode(mode) {
-    currentSecurityMode = mode;
+function setSecurityMode(level) {
+    currentSecurityMode = level;
     fetch("/api/security/level", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ level: mode })
-    }).catch(e => console.log(e));
+        body: JSON.stringify({ level: level })
+    }).catch(()=>{});
 }
 
 function setReasoningMode(mode) {
     currentReasoningMode = mode;
 }
 
-// 4. Central Chat Message Sender (ALL Features In-Chat)
+function toggleVoiceOutput() {
+    voiceOutputEnabled = !voiceOutputEnabled;
+    const icon = document.getElementById("voiceIcon");
+    if (icon) icon.innerText = voiceOutputEnabled ? "🔊" : "🔇";
+    if (!voiceOutputEnabled) bargeInInterrupt();
+}
+
+// 6. Central Chat Execution Stream
+function handleChatKeyDown(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendChatMessage();
+    }
+}
+
+function autoResizeChatInput(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
 async function sendChatMessage() {
     const input = document.getElementById("chatInput");
     if (!input) return;
     const text = input.value.trim();
     if (!text || isAwaitingChatResponse) return;
 
+    // Guard duplicate trigger within 800ms
+    const now = Date.now();
+    if (text === lastTransmittedText && (now - lastTransmittedTime) < 800) return;
+    lastTransmittedText = text;
+    lastTransmittedTime = now;
+
     input.value = "";
-    autoResizeChatInput(input);
-    isAwaitingChatResponse = true;
+    input.style.height = "auto";
 
     renderMessage("user", text);
+    bargeInInterrupt();
 
-    const thinkingId = "thinking-" + Date.now();
-    renderThinkingBubble(thinkingId);
+    isAwaitingChatResponse = true;
+    const thinkingId = renderThinkingBubble();
 
     try {
-        const resp = await fetch("/api/chat", {
+        const res = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -379,32 +415,19 @@ async function sendChatMessage() {
             })
         });
 
-        const data = await resp.json();
+        const data = await res.json();
         removeThinkingBubble(thinkingId);
 
         renderAssistantResponse(data);
-
         if (data.text) {
             speakResponse(data.text);
         }
-    } catch (e) {
+    } catch (err) {
         removeThinkingBubble(thinkingId);
-        renderMessage("assistant", "⚠️ **Connection Error:** Neural uplink interrupted.");
+        renderMessage("assistant", `### ⚠️ Tactical Subsystem Alert\nFailed to reach neural endpoint: \`${err.message}\``);
     } finally {
         isAwaitingChatResponse = false;
     }
-}
-
-function handleChatKeyDown(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendChatMessage();
-    }
-}
-
-function autoResizeChatInput(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
 function renderMessage(role, text) {
@@ -414,59 +437,55 @@ function renderMessage(role, text) {
     const msgDiv = document.createElement("div");
     msgDiv.className = `message ${role}`;
 
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const config = PERSONA_CONFIGS[currentPersona];
+    const timeStr = new Date().toLocaleTimeString();
+    const config = PERSONA_CONFIGS[currentPersona] || PERSONA_CONFIGS.tony;
+    const avatar = role === "user" ? "👤" : config.avatar;
+    const sender = role === "user" ? "OPERATOR" : config.title;
 
-    if (role === "user") {
-        msgDiv.innerHTML = `
-            <div class="msg-header">
-                <span class="sender-name">OPERATOR</span>
-                <span class="msg-time">${timeStr}</span>
-            </div>
-            <div class="msg-bubble">
-                <p>${escapeHtml(text)}</p>
-            </div>
-        `;
-    } else {
-        const parsed = (typeof marked !== 'undefined') ? marked.parse(text) : text;
-        msgDiv.innerHTML = `
-            <div class="msg-header">
-                <span class="sender-avatar">${config.avatar}</span>
-                <span class="sender-name">${config.name}</span>
-                <span class="msg-time">${timeStr}</span>
-            </div>
-            <div class="msg-bubble">
-                ${parsed}
-            </div>
-        `;
-    }
+    const parsedHtml = (typeof marked !== "undefined") ? marked.parse(text) : `<p>${escapeHtml(text)}</p>`;
+
+    msgDiv.innerHTML = `
+        <div class="msg-header">
+            <span class="sender-avatar">${avatar}</span>
+            <span class="sender-name">${sender}</span>
+            <span class="msg-time">${timeStr}</span>
+        </div>
+        <div class="msg-bubble">
+            ${parsedHtml}
+        </div>
+    `;
 
     stream.appendChild(msgDiv);
     stream.scrollTop = stream.scrollHeight;
 }
 
-function renderThinkingBubble(id) {
+function renderThinkingBubble() {
     const stream = document.getElementById("chatMessages");
-    if (!stream) return;
-    const config = PERSONA_CONFIGS[currentPersona];
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "message assistant thinking-bubble";
-    msgDiv.id = id;
-    msgDiv.innerHTML = `
+    if (!stream) return null;
+
+    const id = "think-" + Date.now();
+    const div = document.createElement("div");
+    div.id = id;
+    div.className = "message assistant thinking";
+    div.innerHTML = `
         <div class="msg-header">
-            <span class="sender-avatar">${config.avatar}</span>
-            <span class="sender-name">${config.name}</span>
-            <span class="confidence-badge">⚡ PROCESSING</span>
+            <span class="sender-avatar">${PERSONA_CONFIGS[currentPersona].avatar}</span>
+            <span class="sender-name">${PERSONA_CONFIGS[currentPersona].title}</span>
+            <span class="msg-time">PROCESSING</span>
         </div>
         <div class="msg-bubble">
-            <p><em>Synthesizing cognitive response across tactical matrix...</em></p>
+            <div class="hud-thinking-dots">
+                <span></span><span></span><span></span>
+            </div>
         </div>
     `;
-    stream.appendChild(msgDiv);
+    stream.appendChild(div);
     stream.scrollTop = stream.scrollHeight;
+    return id;
 }
 
 function removeThinkingBubble(id) {
+    if (!id) return;
     const el = document.getElementById(id);
     if (el) el.remove();
 }
@@ -475,28 +494,30 @@ function renderAssistantResponse(data) {
     const stream = document.getElementById("chatMessages");
     if (!stream) return;
 
-    const config = PERSONA_CONFIGS[currentPersona];
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const msgDiv = document.createElement("div");
     msgDiv.className = "message assistant";
 
-    const parsedHtml = (typeof marked !== 'undefined') ? marked.parse(data.text || "") : (data.text || "");
-    const confidence = data.confidence || 99.5;
+    const timeStr = new Date().toLocaleTimeString();
+    const config = PERSONA_CONFIGS[currentPersona] || PERSONA_CONFIGS.tony;
+    const text = data.text || "Command executed.";
+    const parsedHtml = (typeof marked !== "undefined") ? marked.parse(text) : `<p>${escapeHtml(text)}</p>`;
+
     const emotion = data.emotion || "FOCUSED";
-    const reflection = data.reflection || "Verified across local telemetry and security policies.";
+    const confidence = data.confidence || 99.8;
+    const reflection = data.reflection || "Self-reflection: Telemetry confirmed nominal across all subsystems.";
 
     let cardExtra = "";
 
-    // Inline Action Approval Card
-    if (data.approval_required) {
+    // Security Approval Modal Intercept
+    if (data.intent === "SECURITY_APPROVAL" && data.approval_required) {
         const app = data.approval_required;
         cardExtra += `
-            <div class="action-approval-card" id="card-${app.approval_id}">
-                <div class="approval-header">⚠️ HIGH-IMPACT COMMAND APPROVAL REQUIRED</div>
-                <div class="approval-body">${escapeHtml(app.description)}</div>
+            <div class="inline-approval-card" id="card-${app.approval_id}">
+                <div class="approval-header">⚠️ SECURITY APPROVAL REQUIRED (${app.risk_level})</div>
+                <p>${escapeHtml(app.description)}</p>
                 <div class="approval-actions">
-                    <button class="btn-approve" onclick="resolveApproval('${app.approval_id}', true, '${escapeHtml(app.command || '')}')">✓ AUTHORIZE & EXECUTE</button>
-                    <button class="btn-reject" onclick="resolveApproval('${app.approval_id}', false)">✕ ABORT ACTION</button>
+                    <button class="approval-btn auth" onclick="resolveApproval('${app.approval_id}', true, '${escapeHtml(app.command || '')}')">✓ AUTHORIZE ACTION</button>
+                    <button class="approval-btn deny" onclick="resolveApproval('${app.approval_id}', false)">✕ BLOCK & ABORT</button>
                 </div>
             </div>
         `;
@@ -557,20 +578,24 @@ async function resolveApproval(approvalId, approved, command = "") {
     }
 }
 
-// 5. Quick Action Palette Triggers (All Output Directly in Chat)
+// 7. Quick Action Palette Triggers (All Output Directly in Chat)
 function triggerQuickAction(type) {
     const input = document.getElementById("chatInput");
     if (!input) return;
 
-    if (type === "what_remember") input.value = "What do you remember about me and my projects?";
+    if (type === "hf_image") input.value = "Generate image of a futuristic hyper-tactical AI operating center in dark cyber space, photorealistic 8k";
+    else if (type === "spawn_swarm") input.value = "Spawn swarm to perform 360-degree system optimization, code evaluation, and threat scan";
+    else if (type === "run_code") input.value = "Run python:\nimport math\nprint(f'Stark Core Quantum Pi: {math.pi:.10f}')\nprint(f'Squares: {[x**2 for x in range(8)]}')";
+    else if (type === "query_vault") input.value = "Search vault for key project specifications and notes";
+    else if (type === "run_protocol") input.value = "Execute protocol: Morning Tactical Brief";
+    else if (type === "protocol_dev") input.value = "Execute protocol: Developer Kickoff";
+    else if (type === "what_remember") input.value = "What do you remember about me and my projects?";
     else if (type === "add_memory") { promptAddMemory(); return; }
     else if (type === "screen_scan") { captureAndSendScreen(); return; }
     else if (type === "adb_devices") input.value = "List all connected Android ADB devices";
     else if (type === "logcat_errors") input.value = "Analyze recent logcat crash errors";
     else if (type === "git_status") input.value = "Check git repository status and commits";
-    else if (type === "mission_apk") input.value = "Execute mission: Build Android APK";
-    else if (type === "mission_dev") input.value = "Prepare development environment and start toolchains";
-    else if (type === "deep_research") input.value = "Deep research on autonomous agent architectures";
+    else if (type === "deep_research") input.value = "Deep research on next-generation autonomous AI multi-agent swarms";
     else if (type === "system_diag") input.value = "Run hardware diagnostics and check slow PC";
     else if (type === "security_audit") input.value = "Run security sandbox audit";
     else if (type === "clear_chat") {
@@ -582,19 +607,37 @@ function triggerQuickAction(type) {
     sendChatMessage();
 }
 
-// 6. Vision & Screen Scanning
+// 8. Vision & File / PDF Vault Ingestion
 function captureAndSendScreen() {
     const input = document.getElementById("chatInput");
     if (input) input.value = "Inspect current screen and report all visible errors or UI elements.";
     sendChatMessage();
 }
 
-function handleFileUpload(inputEl) {
-    if (inputEl.files && inputEl.files[0]) {
-        const file = inputEl.files[0];
-        const input = document.getElementById("chatInput");
-        if (input) input.value = `Analyze uploaded file: ${file.name}`;
-        sendChatMessage();
+async function handleFileUpload(inputEl) {
+    if (!inputEl.files || !inputEl.files[0]) return;
+    const file = inputEl.files[0];
+    
+    renderMessage("user", `📎 Uploading to Knowledge Vault: **${file.name}** (${(file.size / 1024).toFixed(1)} KB)...`);
+    
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const res = await fetch("/api/vault/upload", {
+            method: "POST",
+            body: formData
+        });
+        const d = await res.json();
+        if (d.success) {
+            renderMessage("assistant", `### 📚 Knowledge Vault Ingestion Complete\n- **Document:** \`${d.filename}\`\n- **Indexed Chunks:** \`${d.chunks_count}\`\n- **Total Words:** \`${d.total_words}\`\n\n*Document indexed into permanent memory. You can now ask questions about this document in chat (e.g. 'Search vault for...').*`);
+        } else {
+            renderMessage("assistant", `### ⚠️ Vault Ingestion Notice\n${d.error || 'Failed to parse file contents.'}`);
+        }
+    } catch(err) {
+        renderMessage("assistant", `### ⚠️ Upload Error\n${err.message}`);
+    } finally {
+        inputEl.value = "";
     }
 }
 
@@ -694,6 +737,7 @@ function startClock() {
 window.addEventListener("DOMContentLoaded", () => {
     startClock();
     initSpeechRecognition();
+    initAudioVisualizer();
     switchPersona("tony", false);
 
     if ('speechSynthesis' in window) {

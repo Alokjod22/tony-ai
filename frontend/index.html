@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TONY AI // Cybernetic Super-Intelligence Operating Layer</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Orbitron:wght@400;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Orbitron:wght@400;600;700;800;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body data-theme="tony">
@@ -22,13 +22,15 @@
         <header class="top-bar">
             <!-- Brand & Holographic Arc Core -->
             <div class="brand-section">
-                <div class="status-indicator-ring">
+                <div class="arc-core-container">
+                    <div class="arc-core-ring outer"></div>
+                    <div class="arc-core-ring inner"></div>
                     <div class="status-indicator-dot" id="liveIndicator"></div>
                 </div>
                 <div class="brand-titles">
                     <div class="brand-main">
                         <span class="logo-text">T.O.N.Y.</span>
-                        <span class="version-tag">STARK OS 4.0</span>
+                        <span class="version-tag">STARK OS 4.0 PRO</span>
                         <span class="hud-pill live-pill">● ONLINE</span>
                     </div>
                     <span class="sub-text">TACTICAL SUPER-INTELLIGENCE CORE</span>
@@ -62,6 +64,11 @@
                     <span class="p-name">FUSION</span>
                     <span class="p-badge">MAX TACTICAL</span>
                 </button>
+            </div>
+
+            <!-- Holographic Audio Waveform Canvas -->
+            <div class="visualizer-wrapper">
+                <canvas id="audioVisualizer" width="130" height="26" title="Real-Time Holographic Audio Spectrum"></canvas>
             </div>
 
             <!-- Header Controls -->
@@ -129,35 +136,35 @@
                     </div>
                     <div class="msg-bubble">
                         <h3>⚡ TONY Cybernetic Super-Intelligence Core Online</h3>
-                        <p>Welcome, Boss. All 100 tactical systems—Memory, Vision, Computer Control, Dev Core, Android ADB, Missions, and Deep Research—are active directly in this Chat Interface.</p>
+                        <p>Welcome, Boss. All super-intelligence capabilities—Hugging Face Multi-Modal Neural Tools, Subagent Swarms, Live Code Sandbox with Self-Healing, Knowledge Vault (PDF & Code RAG), Autonomous Protocols, Vision, Computer Control, Dev Core, and Deep Research—are active directly in this Chat Interface.</p>
                         <div class="welcome-capabilities-grid">
                             <div class="cap-card">
-                                <strong>🧠 Memory & Knowledge</strong>
-                                <span>Remembers user facts, preferences, projects, and past conversations.</span>
+                                <strong>🎨 Hugging Face Tools</strong>
+                                <span>Multi-modal generative image synthesis, document summarization & neural classifiers.</span>
                             </div>
                             <div class="cap-card">
-                                <strong>🎙️ Voice & Interruption</strong>
-                                <span>Wake words ("Hey Tony"), hands-free dialogue, barge-in stop & whisper mode.</span>
+                                <strong>⚡ Subagent Swarms</strong>
+                                <span>Spawns Sentinel, Synthesizer, Architect, Commander & Analyst agents simultaneously.</span>
                             </div>
                             <div class="cap-card">
-                                <strong>👁️ Vision & OCR</strong>
-                                <span>Screen understanding, OCR text extraction, UI detection & troubleshooting.</span>
+                                <strong>💻 Code Sandbox</strong>
+                                <span>Executes Python scripts in isolated runtime with automatic error self-healing.</span>
                             </div>
                             <div class="cap-card">
-                                <strong>🖥️ Computer Control</strong>
-                                <span>Action approvals, terminal execution, file actions & app launches.</span>
+                                <strong>📚 Knowledge Vault</strong>
+                                <span>Upload PDFs, codebases & documents for grounded semantic RAG citations.</span>
                             </div>
                             <div class="cap-card">
-                                <strong>📱 Android & Dev Core</strong>
-                                <span>ADB console, logcat error streaming, Git status & crash analyzer.</span>
+                                <strong>⚙️ Autonomous Protocols</strong>
+                                <span>Multi-step chained automation macros executed with step-by-step telemetry.</span>
                             </div>
                             <div class="cap-card">
-                                <strong>⚙️ Missions & Research</strong>
-                                <span>Autonomous multi-step missions, deep web research & credibility citations.</span>
+                                <strong>👁️ Vision & ADB</strong>
+                                <span>Screen OCR, UI analysis, connected Android device control & logcat crashes.</span>
                             </div>
                         </div>
                         <div class="msg-reflection-footer">
-                            🛡️ <em>Self-Reflection: All local security shields and cognitive modules verified operational.</em>
+                            🛡️ <em>Self-Reflection: All tactical shields, Hugging Face models, subagent matrices, and cognitive modules verified operational.</em>
                         </div>
                     </div>
                 </div>
@@ -166,14 +173,17 @@
             <!-- Quick-Action Tool Ribbon (Above Chat Input) -->
             <div class="quick-action-ribbon">
                 <div class="ribbon-scroll">
+                    <button class="ribbon-pill primary-pill" onclick="triggerQuickAction('hf_image')">🎨 Hugging Face Image</button>
+                    <button class="ribbon-pill primary-pill" onclick="triggerQuickAction('spawn_swarm')">⚡ Spawn Swarm</button>
+                    <button class="ribbon-pill primary-pill" onclick="triggerQuickAction('run_code')">💻 Run Python Code</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('query_vault')">📚 Search Vault</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('run_protocol')">⚙️ Protocol: Morning Brief</button>
+                    <button class="ribbon-pill" onclick="triggerQuickAction('protocol_dev')">⚙️ Protocol: Dev Kickoff</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('what_remember')">🧠 What do you remember?</button>
-                    <button class="ribbon-pill" onclick="triggerQuickAction('add_memory')">➕ Add Memory Fact</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('screen_scan')">👁️ Screen Scan & OCR</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('adb_devices')">📱 ADB Devices</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('logcat_errors')">📱 Logcat Crashes</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('git_status')">💻 Git Status</button>
-                    <button class="ribbon-pill" onclick="triggerQuickAction('mission_apk')">⚙️ Mission: Build APK</button>
-                    <button class="ribbon-pill" onclick="triggerQuickAction('mission_dev')">⚙️ Mission: Dev Setup</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('deep_research')">🌐 Deep Research</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('system_diag')">📊 System Diagnostics</button>
                     <button class="ribbon-pill" onclick="triggerQuickAction('security_audit')">🛡️ Security Audit</button>
@@ -188,9 +198,9 @@
                     <button class="media-tool-btn" onclick="captureAndSendScreen()" title="Inspect Current Screen (Vision OCR)">
                         <span>🖥️</span>
                     </button>
-                    <label class="media-tool-btn" title="Upload Image / Document / PDF for Vision Analysis">
+                    <label class="media-tool-btn" title="Upload Document / PDF / Code for Knowledge Vault RAG">
                         <span>📎</span>
-                        <input type="file" id="mediaUploadInput" accept="image/*,.pdf,.txt,.log" style="display:none;" onchange="handleFileUpload(this)">
+                        <input type="file" id="mediaUploadInput" accept=".pdf,.txt,.md,.py,.js,.json,.log,image/*" style="display:none;" onchange="handleFileUpload(this)">
                     </label>
                 </div>
 
@@ -198,7 +208,7 @@
                 <div class="input-text-wrapper">
                     <textarea 
                         id="chatInput" 
-                        placeholder="Ask TONY, speak, or execute command (e.g. 'What do you remember?', 'Build APK', 'Analyze logcat', 'Research AI agents')..."
+                        placeholder="Ask TONY, speak, or execute command (e.g. 'Generate image of arc reactor', 'Spawn swarm to optimize app', 'Run code: print(2**32)')..."
                         rows="1"
                         onkeydown="handleChatKeyDown(event)"
                         oninput="autoResizeChatInput(this)"
