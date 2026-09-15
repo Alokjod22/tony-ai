@@ -1,5 +1,5 @@
-import asyncio
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Any, List, Optional
 
 class SubAgentRole:
@@ -51,8 +51,39 @@ class AgentSwarmEngine:
     def set_brain(self, brain_ref: Any):
         self.brain = brain_ref
 
+    def _execute_single_agent(self, role: str, task_objective: str) -> Dict[str, Any]:
+        profile = AGENT_PROFILES.get(role, AGENT_PROFILES[SubAgentRole.SYNTHESIZER])
+        agent_time = time.time()
+
+        prompt = f"""{profile['prompt']}
+
+MISSION OBJECTIVE:
+"{task_objective}"
+
+Provide your specialized agent perspective, actionable findings, and recommendations for this mission. Be direct, authoritative, and tactical (max 3 concise paragraphs)."""
+
+        if self.brain and hasattr(self.brain, "generate_raw_text"):
+            try:
+                response_text = self.brain.generate_raw_text(prompt)
+            except Exception as e:
+                response_text = f"Agent communication failure: {str(e)}"
+        else:
+            response_text = f"Simulated report from {profile['name']}: Objective '{task_objective}' analyzed successfully."
+
+        elapsed_agent = round((time.time() - agent_time) * 1000, 1)
+
+        return {
+            "role": role,
+            "name": profile["name"],
+            "icon": profile["icon"],
+            "title": profile["title"],
+            "report": response_text,
+            "latency_ms": elapsed_agent,
+            "status": "COMPLETED"
+        }
+
     def dispatch_swarm(self, task_objective: str, agent_roles: Optional[List[str]] = None) -> Dict[str, Any]:
-        """Dispatches a synchronized swarm of specialized agents to tackle a complex objective."""
+        """Dispatches a synchronized swarm of specialized agents to tackle a complex objective in parallel."""
         if not agent_roles:
             agent_roles = [
                 SubAgentRole.ARCHITECT,
@@ -61,38 +92,11 @@ class AgentSwarmEngine:
             ]
 
         start_time = time.time()
-        agent_reports = []
 
-        for role in agent_roles:
-            profile = AGENT_PROFILES.get(role, AGENT_PROFILES[SubAgentRole.SYNTHESIZER])
-            agent_time = time.time()
-
-            prompt = f"""{profile['prompt']}
-
-MISSION OBJECTIVE:
-"{task_objective}"
-
-Provide your specialized agent perspective, actionable findings, and recommendations for this mission. Be direct, authoritative, and tactical."""
-
-            if self.brain and hasattr(self.brain, "generate_raw_text"):
-                try:
-                    response_text = self.brain.generate_raw_text(prompt)
-                except Exception as e:
-                    response_text = f"Agent communication failure: {str(e)}"
-            else:
-                response_text = f"Simulated report from {profile['name']}: Objective '{task_objective}' analyzed successfully."
-
-            elapsed_agent = round((time.time() - agent_time) * 1000, 1)
-
-            agent_reports.append({
-                "role": role,
-                "name": profile["name"],
-                "icon": profile["icon"],
-                "title": profile["title"],
-                "report": response_text,
-                "latency_ms": elapsed_agent,
-                "status": "COMPLETED"
-            })
+        # Concurrent execution across subagents for ultra-fast response
+        with ThreadPoolExecutor(max_workers=min(len(agent_roles), 5)) as executor:
+            futures = [executor.submit(self._execute_single_agent, role, task_objective) for role in agent_roles]
+            agent_reports = [f.result() for f in futures]
 
         total_latency = round((time.time() - start_time) * 1000, 1)
 

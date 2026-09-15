@@ -127,19 +127,22 @@ class TonyBrain:
                 print(f"[TonyBrain] Note on Gemini Client init: {e}")
 
     def generate_raw_text(self, prompt: str) -> str:
-        """Helper to generate text directly using Gemini LLM for subagents or self-healing."""
+        """Helper to generate text directly using Gemini LLM for subagents or self-healing with high-speed generation."""
         if not self.client:
             self._init_genai()
         if self.client:
             try:
+                from google.genai import types
                 res = self.client.models.generate_content(
                     model=MODEL_NAME,
-                    contents=[prompt]
+                    contents=[prompt],
+                    config=types.GenerateContentConfig(max_output_tokens=600, temperature=0.5)
                 )
                 return res.text or ""
             except Exception as e:
                 print(f"[TonyBrain generate_raw_text Error]: {e}")
         return f"Autonomous computation completed for: {prompt[:80]}..."
+
 
     async def process_user_input(
         self,
@@ -468,17 +471,21 @@ class TonyBrain:
                 parameters=tool_def.get("parameters")
             ))
 
+        target_model = "gemini-2.5-pro" if reasoning_mode == "deep" else MODEL_NAME
+
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             tools=[types.Tool(function_declarations=tool_declarations)],
-            temperature=0.4 if reasoning_mode == "deep" else (0.6 if reasoning_mode == "balanced" else 0.8),
+            temperature=0.3 if reasoning_mode == "deep" else (0.5 if reasoning_mode == "balanced" else 0.7),
+            max_output_tokens=1200 if reasoning_mode == "deep" else 750,
         )
 
         response = self.client.models.generate_content(
-            model=MODEL_NAME,
+            model=target_model,
             contents=contents,
             config=config
         )
+
 
         # Check for function calls
         executed_tools = []
