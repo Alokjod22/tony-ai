@@ -586,7 +586,11 @@ function triggerQuickAction(type) {
     if (type === "hf_image") input.value = "Generate image of a futuristic hyper-tactical AI operating center in dark cyber space, photorealistic 8k";
     else if (type === "spawn_swarm") input.value = "Spawn swarm to perform 360-degree system optimization, code evaluation, and threat scan";
     else if (type === "run_code") input.value = "Run python:\nimport math\nprint(f'Stark Core Quantum Pi: {math.pi:.10f}')\nprint(f'Squares: {[x**2 for x in range(8)]}')";
+    else if (type === "root_device") input.value = "How do I safely root this Android device using Magisk and fastboot without bricking?";
+    else if (type === "flash_firmware") input.value = "Generate a safe fastboot firmware flashing plan for boot and recovery partitions";
+    else if (type === "device_deep") input.value = "Detect connected Android device specs, bootloader lock status, and root state";
     else if (type === "query_vault") input.value = "Search vault for key project specifications and notes";
+
     else if (type === "run_protocol") input.value = "Execute protocol: Morning Tactical Brief";
     else if (type === "protocol_dev") input.value = "Execute protocol: Developer Kickoff";
     else if (type === "what_remember") input.value = "What do you remember about me and my projects?";

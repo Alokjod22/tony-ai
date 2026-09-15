@@ -275,10 +275,22 @@ async def get_workflows():
 async def run_workflow_endpoint(req: RunWorkflowRequest):
     return await workflows.run_workflow(req.workflow_name)
 
-# --- 9. Developer & Android Endpoints ---
+# --- 9. Developer, Rooting & Android Endpoints ---
 @app.get("/api/android/devices")
 async def get_android_devices():
     return developer.list_adb_devices()
+
+@app.get("/api/android/device-deep")
+async def get_android_deep_device():
+    return developer.detect_device_deep()
+
+@app.get("/api/android/root-protocol")
+async def get_root_protocol(model: Optional[str] = "Generic Android"):
+    return developer.get_safe_rooting_protocol(device_model=model)
+
+@app.get("/api/android/flash-plan")
+async def get_flash_plan(partition: str = "boot", img_path: str = "boot.img"):
+    return developer.safe_firmware_flash_plan(partition=partition, img_path=img_path)
 
 @app.get("/api/android/logcat")
 async def get_android_logcat():
@@ -291,6 +303,7 @@ async def get_git_status():
 @app.post("/api/developer/crash")
 async def analyze_crash(req: CrashAnalysisRequest):
     return developer.analyze_crash_log(req.log_text)
+
 
 # --- 10. Autonomous Research Endpoints ---
 @app.post("/api/research")
